@@ -1,3 +1,4 @@
+import os
 import json
 import datetime as dt
 import logging
@@ -7,7 +8,7 @@ from PIL import Image
 from tqdm import tqdm
 
 
-def from_json(labeled_data, coco_output):
+def from_json(labeled_data, coco_output, im_output):
     # read labelbox JSON output
     with open(labeled_data, 'r', encoding='utf-8') as f:
         # lines = f.readlines()
@@ -35,6 +36,7 @@ def from_json(labeled_data, coco_output):
         # skip images without label
         if data['Label'] == {}:
             continue
+        
         # Download and get image name
         try:
             response = requests.get(data['Labeled Data'], stream=True)
@@ -50,12 +52,12 @@ def from_json(labeled_data, coco_output):
         response.raw.decode_content = True
         im = Image.open(response.raw)
         width, height = im.size
-
+        
         image = {
             "id": data['ID'],
             "width": width,
             "height": height,
-            "file_name": data['Labeled Data'],
+            "file_name": data['External ID'],
             "license": None,
             "flickr_url": data['Labeled Data'],
             "coco_url": data['Labeled Data'],
@@ -63,10 +65,16 @@ def from_json(labeled_data, coco_output):
         }
 
         coco['images'].append(image)
+        
+        # save image to data/train/
+        # os.makedirs(im_output, exist_ok=True)
+        # im.save(os.path.join(im_output, data['External ID']))
 
-        # convert WKT multipolygon to COCO Polygon format
-        for cat in data['Label'].keys():
-
+        # convert Labelbox Polygon to COCO Polygon format
+        for object_ in data['Label']['objects']:
+            polygon = object_['polygon']
+            # add categories
+            cat = object_['value']
             try:
                 # check if label category exists in 'categories' field
                 cat_id = [c['id'] for c in coco['categories']
@@ -79,30 +87,30 @@ def from_json(labeled_data, coco_output):
                     'name': cat
                 }
                 coco['categories'].append(category)
-
-            for object_ in data['Label'][cat]:
-                polygon = object_['polygon']
-                segmentation = [list(i.values()) for i in polygon]
-                m = Polygon(segmentation)
                 
-                annotation = {
-                    "id": len(coco['annotations']) + 1,
-                    "image_id": data['ID'],
-                    "category_id": cat_id,
-                    "segmentation": [segmentation],
-                    "area": m.area,  # float
-                    "bbox": [m.bounds[0], m.bounds[1],
-                             m.bounds[2]-m.bounds[0],
-                             m.bounds[3]-m.bounds[1]],
-                    "iscrowd": 0
-                }
+            # add polygons
+            segmentation = [list(i.values()) for i in polygon]
+            m = Polygon(segmentation)
+            
+            annotation = {
+                "id": len(coco['annotations']) + 1,
+                "image_id": data['ID'],
+                "category_id": cat_id,
+                "segmentation": [segmentation],
+                "area": m.area,  # float
+                "bbox": [m.bounds[0], m.bounds[1],
+                            m.bounds[2]-m.bounds[0],
+                            m.bounds[3]-m.bounds[1]],
+                "iscrowd": 0
+            }
 
-                coco['annotations'].append(annotation)
+            coco['annotations'].append(annotation)
 
     with open(coco_output, 'w+') as f:
         f.write(json.dumps(coco))
 
 if __name__ == "__main__":
-    json_file = './data/labelbox_1_26.json'
-    output_file = './data/coco_1_26.json'
-    from_json(json_file, output_file)
+    json_file = './data/annotation/labelbox_1_26.json'
+    im_output = './data/train'
+    coco_output = './data/annotation/coco_1_26.json'
+    from_json(json_file, coco_output, im_output)
