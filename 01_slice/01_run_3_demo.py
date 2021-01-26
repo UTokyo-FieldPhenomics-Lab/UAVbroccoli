@@ -12,7 +12,7 @@ def one_plot(project_name, drive='Z'):
     raw_img_folder = f"{drive}:/共享云端硬盘/broccoliProject/rgb_raw/{project_name}"
     param_folder = f"{project_path}/params"
 
-    out_folder = f"{drive}:/共享云端硬盘/broccoliProject/anotation_use/{project_name}"
+    out_folder = f"{drive}:/共享云端硬盘/broccoliProject/anotation_use/jpg/{project_name}"
     json_name = f"{out_folder}.json"
     
     if not os.path.exists(out_folder):
@@ -33,7 +33,7 @@ def one_plot(project_name, drive='Z'):
                                       'y':ts.hgrid_st[h_id]}
     ts.dict2json(offset_json, json_name)
     
-    ts.save_all_grids(save_folder=out_folder, extend=True, skip_empty=True)
+    ts.save_all_grids(save_folder=out_folder, extend=True, skip_empty=True, format='jpg')
     
 
 if __name__ == '__main__':
