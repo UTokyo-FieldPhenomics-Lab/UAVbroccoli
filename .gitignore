@@ -4,3 +4,5 @@
 */train/*
 */validation/*
 */__pycache__/*
+
+test/

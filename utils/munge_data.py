@@ -1,5 +1,5 @@
 import os
-import requests
+import re
 import numpy as np
 from PIL import Image
 from sklearn import model_selection
@@ -8,29 +8,17 @@ from pycocotools.coco import COCO
 from tqdm import tqdm
 
 
-JSON_PATH = './data/annotation/coco_1_26.json'
-OUTPUT_PATH = './data/broccoli_data'
-
+JSON_PATH = '../test/coco_test.json'
+OUTPUT_PATH = '../test/broccoli_data'
 
 def process_data(images, data_type="train"):
     for im in tqdm(images, total=len(images)):
-        try:
-            response = requests.get(im['coco_url'], stream=True)
-        except requests.exceptions.MissingSchema as e:
-            logging.exception(('"coco_url" field must be a URL. '))
-            continue
-        except requests.exceptions.ConnectionError as e:
-            logging.exception(f"Failed to fetch image from {im['coco_url']}")
-            continue
 
-        response.raw.decode_content = True
-        img = Image.open(response.raw)
-        
         annIds = coco.getAnnIds(imgIds=[im['id']])
         anns = coco.loadAnns(annIds)
         
         image_name = im['file_name']
-        filename = image_name.replace(".jpg", ".txt")
+        filename = re.sub('jpg', 'txt', image_name, flags=re.IGNORECASE)
         width = im['width']
         height = im['height']
         yolo_data = []
@@ -55,18 +43,15 @@ def process_data(images, data_type="train"):
             yolo_data.append([cat, x, y, w, h])
             
         yolo_data = np.array(yolo_data)
-        
-        os.makedirs(OUTPUT_PATH, exist_ok=True)
-        
+        path = f'{OUTPUT_PATH}/labels/{data_type}'
+        os.makedirs(path, exist_ok=True)
         # save labels
         np.savetxt(
-            os.path.join(OUTPUT_PATH, f"labels/{data_type}/{filename}"),
+            f"{path}/{filename}",
             yolo_data,
             fmt=["%d", "%f", "%f", "%f", "%f"]
         )
         
-        #save iamges
-        img.save(os.path.join(OUTPUT_PATH, f'images/{data_type}/{image_name}'))
         
         
 if __name__ == "__main__":
@@ -81,7 +66,7 @@ if __name__ == "__main__":
     imgIds = coco.getImgIds()
     images = coco.loadImgs(imgIds)
     
-    # train, validation split
+    #train, validation split
     train, valid = model_selection.train_test_split(
         images,
         test_size=0.1,
@@ -91,3 +76,4 @@ if __name__ == "__main__":
     
     process_data(train, data_type="train")
     process_data(valid, data_type="validation")
+    
