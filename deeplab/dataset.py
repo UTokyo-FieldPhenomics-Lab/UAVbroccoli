@@ -2,43 +2,66 @@ import os
 
 import torch
 import torch.nn as nn
-from torchvision import  transforms
+from torchvision import transforms
 
 import numpy as np
 from PIL import Image
 import imageio
+from sklearn import model_selection
+from pycocotools.coco import COCO
+
+from tqdm import tqdm
 
 class Broccoli(torch.utils.data.Dataset):
-    def __init__(self, img_dir, mask_dir, size=1500, transforms=transforms.ToTensor()):
+    def __init__(self, coco_label_path, size=256, transforms=transforms.ToTensor()):
         super().__init__()
-        self.img_dir = img_dir
-        self.mask_dir = mask_dir
+        self.coco = COCO(coco_label_path)
+        imgIds = self.coco.getImgIds()
+        annIds = self.coco.getAnnIds()
+        self.images = self.coco.loadImgs(imgIds)
+        self.anns = self.coco.loadAnns(annIds)
+        
         self.size = size
-        self.data_type = data_type
-        self.img_list = os.listdir(f'{img_dir}/{data_type}')
-        self.mask_list = os.listdir(f'{mask_dir}/{data_type}')
         self.transforms = transforms
         
-    def readImage(self, img_id):
+
+    def get_sub(self, img, ann):
         
-        img = Image.open(img_id)
+        h, w, _ =img.shape 
         transform = transforms.Resize((self.size, self.size))
-        return transform(img)
-    
+        
+        xmin = ann["bbox"][0]
+        ymin = ann["bbox"][1]
+        xmax = ann["bbox"][2] + ann["bbox"][0]
+        ymax = ann["bbox"][3] + ann["bbox"][1]
+
+        base = 50
+        xmin = xmin - base if (xmin - base) >= 0 else 0
+        ymin = ymin - base if (ymin - base) >= 0 else 0
+        xmax = xmax + base if (xmax + base) <= h else h
+        ymax = ymax + base if (ymax + base) <= w else w
+        
+        sub_image = img[int(ymin):int(ymax), int(xmin):int(xmax), :]
+        mask = self.coco.annToMask(ann) * 255.
+        mask = mask[int(ymin):int(ymax), int(xmin):int(xmax)]
+        sub_image = Image.fromarray(sub_image)
+        mask = Image.fromarray(mask)
+        
+        return transform(sub_image), transform(mask)
+        
     def __len__(self) -> int:
-        return len(self.img_list)
+        return len(self.anns)
     
     def __getitem__(self, index):
-        
-        img_id = self.img_list[index]
-        
-        img = self.readImage(f'{self.img_dir}/{self.data_type}/{img_id}')
-        # print(f'{self.img_dir}/{self.data_type}/{img_id}')
-        mask = self.readImage(f'{self.mask_dir}/{self.data_type}/{img_id}').convert("L")
+        ann = self.anns[index]
+        image = self.coco.loadImgs([ann['image_id']])[0]
+        img = imageio.imread(image['imagePath'])
+        sub, mask = self.get_sub(img, ann)
+
         if self.transforms:
-            img = self.transforms(img)
+            sub = self.transforms(sub)
             mask = self.transforms(mask)
-        sample = {"image": img, "mask": mask}
+        sample = {"image": sub, "mask": mask}
                  
         return sample 
         
