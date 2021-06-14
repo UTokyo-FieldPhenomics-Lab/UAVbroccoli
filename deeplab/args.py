@@ -1,12 +1,9 @@
-img_dir = '../data/segmentation_full/images'
-mask_dir ='../data/segmentation_full/masks'
-out_dir = './runs'
-# img_dir = '../data/segmentation/images'
-# mask_dir ='../data/segmentation/masks'
+coco_label_path = 'I:/Shared drives/broccoliProject/11_labelme_json/coco/test.json'
+out_dir = './checkpoints'
 n_epochs = 100
 n_classes = 1
-batch_size = 32
-lr = 0.0002
+batch_size = 16
+lr = 0.001
 beta_1 = 0.5
 beta_2 = 0.999
-im_size = 1500
+im_size = 128

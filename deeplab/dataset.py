@@ -10,7 +10,9 @@ import imageio
 from sklearn import model_selection
 from pycocotools.coco import COCO
 
-from tqdm import tqdm
+# from tqdm import tqdm
+
+ROOT = 'I:/Shared drives/broccoliProject/'
 
 class Broccoli(torch.utils.data.Dataset):
     def __init__(self, coco_label_path, size=256, transforms=transforms.ToTensor()):
@@ -47,7 +49,7 @@ class Broccoli(torch.utils.data.Dataset):
         sub_image = Image.fromarray(sub_image)
         mask = Image.fromarray(mask)
         
-        return transform(sub_image), transform(mask)
+        return transform(sub_image), transform(mask).convert('L')
         
     def __len__(self) -> int:
         return len(self.anns)
@@ -55,7 +57,9 @@ class Broccoli(torch.utils.data.Dataset):
     def __getitem__(self, index):
         ann = self.anns[index]
         image = self.coco.loadImgs([ann['image_id']])[0]
-        img = imageio.imread(image['imagePath'])
+        imagePath = ROOT + image['imagePath'][6:]
+        # print(imagePath)
+        img = imageio.imread(imagePath)
         sub, mask = self.get_sub(img, ann)
 
         if self.transforms:
@@ -66,35 +70,35 @@ class Broccoli(torch.utils.data.Dataset):
         return sample 
         
         
-class Prediction(torch.utils.data.Dataset):
-    def __init__(self, img_dir, size=256, transforms=transforms.ToTensor()):
-        super().__init__()
-        self.img_dir = img_dir
-        self.size = size
-        self.img_list = os.listdir(f'{img_dir}')
-        self.transforms = transforms
+# class Prediction(torch.utils.data.Dataset):
+#     def __init__(self, img_dir, size=256, transforms=transforms.ToTensor()):
+#         super().__init__()
+#         self.img_dir = img_dir
+#         self.size = size
+#         self.img_list = os.listdir(f'{img_dir}')
+#         self.transforms = transforms
         
-    def readImage(self, img_id):
-        # img = Image.open(img_id)
-        img = imageio.imread(img_id)
-        if img_id.endswith('tiff'):
-            img = img[:, :, :3]
-        img = Image.fromarray(img)
-        transform = transforms.Resize((self.size, self.size))
-        return transform(img)
+#     def readImage(self, img_id):
+#         # img = Image.open(img_id)
+#         img = imageio.imread(img_id)
+#         if img_id.endswith('tiff'):
+#             img = img[:, :, :3]
+#         img = Image.fromarray(img)
+#         transform = transforms.Resize((self.size, self.size))
+#         return transform(img)
     
-    def __len__(self) -> int:
+#     def __len__(self) -> int:
         
-        return len(self.img_list)
+#         return len(self.img_list)
     
-    def __getitem__(self, index):
+#     def __getitem__(self, index):
         
-        img_id = self.img_list[index]
+#         img_id = self.img_list[index]
         
-        img = self.readImage(f'{self.img_dir}/{img_id}')
+#         img = self.readImage(f'{self.img_dir}/{img_id}')
 
-        if self.transforms:
-            img = self.transforms(img)
-        if img_id.endswith('tiff'):
-            img_id.replace('tiff', 'jpg')
-        return img, img_id
+#         if self.transforms:
+#             img = self.transforms(img)
+#         if img_id.endswith('tiff'):
+#             img_id.replace('tiff', 'jpg')
+#         return img, img_id

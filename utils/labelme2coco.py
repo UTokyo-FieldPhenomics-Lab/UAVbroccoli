@@ -90,7 +90,7 @@ def from_dir(dir, coco_output):
         f.write(json.dumps(coco))
 
 if __name__ == "__main__":
-    json_dir = '../test/annotation/'
+    json_dir = 'I:/Shared drives/broccoliProject/11_labelme_json/test'
     # im_output = './data/train'
-    coco_output = '../test/coco_test.json'
+    coco_output = 'I:/Shared drives/broccoliProject/11_labelme_json/coco/test.json'
     from_dir(json_dir, coco_output)

@@ -2,22 +2,17 @@ import os
 import copy
 
 import numpy as np
-import pandas as pd
-from PIL import Image
-import imageio
-import matplotlib.pyplot as plt
+
 from tqdm import tqdm
-from sklearn.metrics import f1_score, roc_auc_score
+# from sklearn.metrics import f1_score, roc_auc_score
+from prefetch_generator import BackgroundGenerator
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision
+
 from torchvision import transforms
 from torchvision.utils import make_grid
 from torch.utils.data import DataLoader
-from torch import optim
-from torch.autograd import Variable
+
 
 from model import createDeepLabv3
 from dataset import Broccoli
@@ -25,14 +20,16 @@ from dataset import Broccoli
 seed = 1123
 torch.manual_seed(seed)
 
+class DataloaderX(DataLoader):
+    def __iter__(self):
+        return BackgroundGenerator(super().__iter__())
 
 class deeplab_engine:
     def __init__(self, arg, device):
 
-        self.img_dir = arg.img_dir
-        self.mask_dir = arg.mask_dir
+        self.coco_label_path = arg.coco_label_path
         self.out_dir = arg.out_dir
-        os.makedirs(out_dir, exist_ok=True)
+        os.makedirs(arg.out_dir, exist_ok=True)
         
         self.n_epochs = arg.n_epochs
         self.n_classes = arg.n_classes
@@ -73,20 +70,14 @@ class deeplab_engine:
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         ])
         
-        self.train_ = Broccoli(img_dir=self.img_dir, mask_dir=self.mask_dir, size=self.im_size, data_type="train")
-        self.valid_ = Broccoli(img_dir=self.img_dir, mask_dir=self.mask_dir, size=self.im_size, data_type="validation")
+        self.train_ = Broccoli(coco_label_path=self.coco_label_path, size=self.im_size)
+        # self.valid_ = Broccoli(img_dir=self.img_dir, mask_dir=self.mask_dir, size=self.im_size, data_type="validation")
 
-        self.dataloader_train = DataLoader(
+        self.dataloader_train = DataloaderX(
             self.train_,
             batch_size=self.batch_size,
             num_workers=4,
             shuffle=True
-        )
-        self.dataloader_valid = DataLoader(
-            self.valid_,
-            batch_size=self.batch_size,
-            num_workers=4,
-            shuffle=False
         )
         
         print("initilization done\n")
@@ -139,13 +130,9 @@ class deeplab_engine:
 
 
         train_losses = []
-        valid_losses = []
         train_mious = []
-        valid_mious = []
-        train_f1_scores = []
-        valid_f1_scores = []
-        train_roc_auc_score = []
-        valid_roc_auc_score = []
+        # train_f1_scores = []
+        # train_roc_auc_score = []
         
         best_miou = 0.
         best_model_wts = copy.deepcopy(self.model.state_dict())
@@ -153,7 +140,6 @@ class deeplab_engine:
         # train phase
         self.model.train()
         for epoch in range(self.n_epochs):
-            print(f'processing on batch {epoch+1}')
             # Dataloader returns the batches
             batch_loss = 0.
             mious = 0.
@@ -182,8 +168,8 @@ class deeplab_engine:
                 ground_truth = mask.detach().cpu().numpy()
                 
                 # Use a classification threshold of 0.1
-                f1_score_ = f1_score(y_true > 0, y_pred > 0.1)         
-                roc_auc_score_ = roc_auc_score(y_true.astype('uint8'), y_pred)
+                # f1_score_ = f1_score(y_true > 0, y_pred > 0.1)         
+                # roc_auc_score_ = roc_auc_score(y_true.astype('uint8'), y_pred)
                 miou = self.iou_mean(pred_masks, ground_truth)
 
                 # Update gradients
@@ -195,76 +181,76 @@ class deeplab_engine:
                 # Keep track of the losses
                 batch_loss += train_loss.item()
                 mious += miou
-                f1 += f1_score_
-                ras += roc_auc_score_
+                # f1 += f1_score_
+                # ras += roc_auc_score_
                 
             train_losses += [batch_loss / len_train]
             train_mious += [mious / len_train]
-            train_f1_scores += [f1 / len_train]
-            train_roc_auc_score += [ras / len_train]
+            # train_f1_scores += [f1 / len_train]
+            # train_roc_auc_score += [ras / len_train]
                 
-            # validation phase
-            self.model.eval()
-            with torch.no_grad():
-                batch_loss = 0.
-                mious = 0.
-                f1 = 0.
-                ras = 0.
-                len_valid = len(self.dataloader_valid)
-                for sample in tqdm(self.dataloader_valid):
+            # # validation phase
+            # self.model.eval()
+            # with torch.no_grad():
+            #     batch_loss = 0.
+            #     mious = 0.
+            #     f1 = 0.
+            #     ras = 0.
+            #     len_valid = len(self.dataloader_valid)
+            #     for sample in tqdm(self.dataloader_valid):
 
-                    img = sample["image"].to(self.device)
-                    mask = sample["mask"].to(self.device)
+            #         img = sample["image"].to(self.device)
+            #         mask = sample["mask"].to(self.device)
 
 
-                    pred = self.model(img)
-                    valid_loss = self.criterian(pred["out"], mask)
+            #         pred = self.model(img)
+            #         valid_loss = self.criterian(pred["out"], mask)
                     
-                    y_pred = pred['out'].data.cpu().numpy().ravel()
-                    y_true = mask.data.cpu().numpy().ravel()
+            #         y_pred = pred['out'].data.cpu().numpy().ravel()
+            #         y_true = mask.data.cpu().numpy().ravel()
                     
-                    pred_masks = pred['out'].detach().cpu().numpy()
-                    pred_masks[pred_masks < 0.5] = 0
-                    pred_masks[pred_masks >= 0.5] = 1
+            #         pred_masks = pred['out'].detach().cpu().numpy()
+            #         pred_masks[pred_masks < 0.5] = 0
+            #         pred_masks[pred_masks >= 0.5] = 1
                     
-                    ground_truth = mask.detach().cpu().numpy()
+            #         ground_truth = mask.detach().cpu().numpy()
                     
-                    # Use a classification threshold of 0.1
-                    f1_score_ = f1_score(y_true > 0, y_pred > 0.1)
-                    roc_auc_score_ = roc_auc_score(y_true.astype('uint8'), y_pred)
-                    miou = self.iou_mean(pred_masks, ground_truth)
+            #         # Use a classification threshold of 0.1
+            #         f1_score_ = f1_score(y_true > 0, y_pred > 0.1)
+            #         roc_auc_score_ = roc_auc_score(y_true.astype('uint8'), y_pred)
+            #         miou = self.iou_mean(pred_masks, ground_truth)
                     
-                    # Keep track of the losses
-                    batch_loss += valid_loss.item()
-                    mious += miou
-                    f1 += f1_score_
-                    ras += roc_auc_score_
+            #         # Keep track of the losses
+            #         batch_loss += valid_loss.item()
+            #         mious += miou
+            #         f1 += f1_score_
+            #         ras += roc_auc_score_
                     
-                valid_losses += [batch_loss / len_valid]
-                valid_mious += [mious / len_valid]
-                valid_f1_scores += [f1 / len_valid]
-                valid_roc_auc_score += [ras / len_valid]
+            #     valid_losses += [batch_loss / len_valid]
+            #     valid_mious += [mious / len_valid]
+            #     valid_f1_scores += [f1 / len_valid]
+            #     valid_roc_auc_score += [ras / len_valid]
 
 
             ### Visualization code ###
-            print(f"[Train loss: {train_losses[-1]:.3f}, Train mIOU: {train_mious[-1]:.3f}] [Valid loss: {valid_losses[-1]:.3f}, Valid mIOU: {valid_mious[-1]:.3f}]")
+            print(f"epoch {epoch+1}, Train loss: {train_losses[-1]:.3f}, Train mIOU: {train_mious[-1]:.3f}")
 
                 
-            if valid_mious[-1] > best_miou:
-                best_miou = valid_mious[-1]
+            if train_mious[-1] > best_miou:
+                best_miou = train_mious[-1]
                 best_model_wts = copy.deepcopy(self.model.state_dict())
                 
         ## Save Model ##
         checkpoint = {
                 'model_state_dict': self.model.state_dict(),
                 'loss_train': np.array(train_losses),
-                'loss_valid': np.array(valid_losses),
+                # 'loss_valid': np.array(valid_losses),
                 'miou_train': np.array(train_mious),
-                'miou_valid': np.array(valid_mious),
-                'f1_train': np.array(train_f1_scores),
-                'f1_valid': np.array(valid_f1_scores),
-                'rac_train': np.array(train_roc_auc_score),
-                'rac_valid': np.array(valid_roc_auc_score),
+                # 'miou_valid': np.array(valid_mious),
+                # 'f1_train': np.array(train_f1_scores),
+                # 'f1_valid': np.array(valid_f1_scores),
+                # 'rac_train': np.array(train_roc_auc_score),
+                # 'rac_valid': np.array(valid_roc_auc_score),
                 'epoch': epoch + 1
             }
         torch.save(checkpoint, f'{self.out_dir}/epoch{epoch+1}.tar')  # overwrite if exist
@@ -272,13 +258,13 @@ class deeplab_engine:
         best_model = {
             'model_state_dict': best_model_wts,
             'loss_train': np.array(train_losses),
-            'loss_valid': np.array(valid_losses),
+            # 'loss_valid': np.array(valid_losses),
             'miou_train': np.array(train_mious),
-            'miou_valid': np.array(valid_mious),
-            'f1_train': np.array(train_f1_scores),
-            'f1_valid': np.array(valid_f1_scores),
-            'rac_train': np.array(train_roc_auc_score),
-            'rac_valid': np.array(valid_roc_auc_score),
+            # 'miou_valid': np.array(valid_mious),
+            # 'f1_train': np.array(train_f1_scores),
+            # 'f1_valid': np.array(valid_f1_scores),
+            # 'rac_train': np.array(train_roc_auc_score),
+            # 'rac_valid': np.array(valid_roc_auc_score),
             'epoch': epoch + 1
         }
         torch.save(checkpoint,  f'{self.out_dir}/best_model.tar')  # overwrite if exist
