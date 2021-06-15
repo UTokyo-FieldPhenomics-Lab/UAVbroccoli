@@ -5,17 +5,14 @@ from tqdm import tqdm
 from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
-PROJECT_PATH = 'I:/Shared drives/broccoliProject/00_rgb_raw'
+ROOT = 'I:/Shared drives/broccoliProject/'
+PROJECT_PATH = 'I:/Shared drives/broccoliProject/11_labelme_json/root_on_raw.json/'
 JSON_PATH = 'I:/Shared drives/broccoliProject/11_labelme_json/json'
 os.makedirs(JSON_PATH, exist_ok=True)
-DIR_LIST = ['broccoli_tanashi_5_20200518_P4M_10m',
-            'broccoli_tanashi_5_20200520_P4M_10m',
-            'broccoli_tanashi_5_20200522_P4M_10m_after',
-            'broccoli_tanashi_5_20200525_P4M_10m',
-            'broccoli_tanashi_5_20200526_P4M_10m_after',
-            'broccoli_tanashi_5_20200528_P4M_10m_before']
+
 
 def write_json(img_path, prefix):
+    
     labelme = {
         'version': "4.5.7",
         'flags': {},
@@ -26,24 +23,26 @@ def write_json(img_path, prefix):
         'imageWidth': None
     }
     
+    # print(img_path)
     labelme['imagePath'] = '../../' + img_path[33:]
     
-    json_name = 'blank_' + prefix + '_' + img_path.split('/')[-1].split('.')[-2] + '.json'
+    json_name = 'blank_' + prefix + '_' + img_path.split('\\')[-1].split('.')[-2] + '.json'
     
     # print(json_name)
     with open(os.path.join(JSON_PATH, json_name), 'w+') as f:
-        f.write(json.dumps(labelme))
+        f.write(json.dumps(labelme, indent=1))
     
-   
-def from_dir(dir, prefix):
-    img_formats = ['jpg', 'jpeg', 'png', 'tif', 'tiff']
-    imagesPath= [f'{dir}/{entry.name}' for entry in os.scandir(dir) if entry.name.split('.')[-1].lower() in img_formats]
-    # print(imagesPath[0])
-    for imagePath in tqdm(imagesPath):
-        write_json(imagePath, prefix)
-        
 if __name__ == "__main__":
-    for DIR in DIR_LIST:
-        PATH = f'{PROJECT_PATH}/{DIR}'
-        prefix = DIR.split('_')[3]
-        from_dir(PATH, prefix)
+    jsonsFile= [entry.name for entry in os.scandir(PROJECT_PATH) if entry.name.endswith('.json')]
+    # print(imagesPath[0])
+    for json_file in jsonsFile:
+        with open(f'{PROJECT_PATH}/{json_file}', 'r', encoding='utf-8') as f:
+            # lines = f.readlines()
+            label_data = json.load(f)
+        prefix = json_file.split('_')[3]
+        
+        for img_name in tqdm(label_data.keys(), total = len(label_data.keys())):
+            imagePath = ROOT + label_data[img_name]['imagePath'][40:]
+            write_json(imagePath, prefix)
+        
+        
