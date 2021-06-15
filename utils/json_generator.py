@@ -26,11 +26,7 @@ def write_json(img_path, prefix):
         'imageWidth': None
     }
     
-    img = imageio.imread(img_path)
-    h, w, _ = img.shape
-    labelme['imageHeight'] = h
-    labelme['imageWidth'] = w
-    labelme['imagePath'] = img_path
+    labelme['imagePath'] = '../../' + img_path[33:]
     
     json_name = 'blank_' + prefix + '_' + img_path.split('/')[-1].split('.')[-2] + '.json'
     

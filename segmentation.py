@@ -142,7 +142,7 @@ def one_image(imageName, base=75):
     
     # imageio.imwrite(os.path.join(MASK_PATH, name), mixed)
     
-def from_dir(IMG_PATH):
+def from_dir(JSON_PATH):
     """[summary]
 
     Args:
@@ -151,11 +151,11 @@ def from_dir(IMG_PATH):
     Returns:
         [list]: [list of cropped images with shape (n, c, w, h)]
     """    
-    img_formats = ['jpg', 'jpeg', 'png', 'tif', 'tiff']
-    img_list = [entry.name for entry in os.scandir(IMG_PATH) if entry.name.split('.')[-1].lower() in img_formats]
+    json_list = [entry.name for entry in os.scandir(IMG_PATH) if entry.name.endswith('.json')]
     print(img_list)
     for item in tqdm(img_list):
-        one_image(item)
+        polygons = one_image(item)
+        
 
 
 
