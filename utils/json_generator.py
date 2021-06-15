@@ -6,14 +6,14 @@ from PIL import ImageFile
 ImageFile.LOAD_TRUNCATED_IMAGES = True
 
 PROJECT_PATH = 'I:/Shared drives/broccoliProject/00_rgb_raw'
-JSON_PATH = 'I:/Shared drives/broccoliProject/11_labelme_json/blank'
+JSON_PATH = 'I:/Shared drives/broccoliProject/11_labelme_json/json'
 os.makedirs(JSON_PATH, exist_ok=True)
 DIR_LIST = ['broccoli_tanashi_5_20200518_P4M_10m',
             'broccoli_tanashi_5_20200520_P4M_10m',
             'broccoli_tanashi_5_20200522_P4M_10m_after',
             'broccoli_tanashi_5_20200525_P4M_10m',
             'broccoli_tanashi_5_20200526_P4M_10m_after',
-            'broccoli_tanashi_5_20200528_P4M_10m_after']
+            'broccoli_tanashi_5_20200528_P4M_10m_before']
 
 def write_json(img_path, prefix):
     labelme = {
@@ -45,5 +45,5 @@ def from_dir(dir, prefix):
 if __name__ == "__main__":
     for DIR in DIR_LIST:
         PATH = f'{PROJECT_PATH}/{DIR}'
-        prefix = DIR.split('_')[-4]
+        prefix = DIR.split('_')[3]
         from_dir(PATH, prefix)

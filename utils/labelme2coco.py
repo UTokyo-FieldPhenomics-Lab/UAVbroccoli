@@ -6,7 +6,7 @@ import requests
 from tqdm import tqdm
 
 
-def from_dir(dir, coco_output):
+def labelme2json(dir, coco_output):
     
     # get json list
     json_list = [entry.name for entry in os.scandir(dir) if entry.name.endswith('.json')]
@@ -85,12 +85,12 @@ def from_dir(dir, coco_output):
             }
 
             coco['annotations'].append(annotation)
-
-    with open(coco_output, 'w+') as f:
-        f.write(json.dumps(coco))
+    return coco_output
 
 if __name__ == "__main__":
     json_dir = 'I:/Shared drives/broccoliProject/11_labelme_json/test'
     # im_output = './data/train'
     coco_output = 'I:/Shared drives/broccoliProject/11_labelme_json/coco/test.json'
-    from_dir(json_dir, coco_output)
+    coco = labelme2json(json_dir, coco_output)
+    with open(coco_output, 'w+') as f:
+        f.write(json.dumps(coco))

@@ -1,9 +1,11 @@
 from genericpath import exists
 import os
+import random
 
 import json
 import numpy as np
 from numpy.core.defchararray import asarray
+from numpy.lib.polynomial import poly
 import pandas as pd
 from PIL import Image
 import imageio
@@ -29,9 +31,11 @@ from deeplab.model import createDeepLabv3
 from deeplab.dataset import Broccoli
 from deeplab import args as arg
 from utils.mask2polygon import mask2polygon
+from utils.labelme2coco import labelme2json
 
-IMG_PATH = './deeplab/test/images/'
-LABEL_PATH = 'I:/Shared drives/broccoliProject/11_labelme_json/root_on_raw.json/broccoli_tanashi_5_20200525_P4M_10m.json'
+ROOT = 'I:/Shared drives/broccoliProject/'
+ROOT_ON_RAW_PATH = 'I:/Shared drives/broccoliProject/11_labelme_json/root_on_raw.json/'
+JSON_PATH = 'I:/Shared drives/broccoliProject/11_labelme_json/json'
 MASK_PATH = './deeplab/test/masks/'
 os.makedirs(MASK_PATH, exist_ok=True)
 
@@ -72,7 +76,7 @@ def predict_batch(model, batch):
         return np.array(masks, dtype=np.uint8)
 
 
-def one_image(imageName, base=75):
+def one_image(imageName, map_label, base=75):
     transform1 = transforms.Compose([
         transforms.Resize((arg.im_size, arg.im_size)),
         transforms.ToTensor(),
@@ -81,17 +85,17 @@ def one_image(imageName, base=75):
     
     # transform2 = 
     
-    with open(LABEL_PATH, 'r', encoding='utf-8') as f:
+    with open(map_label, 'r', encoding='utf-8') as f:
         # lines = f.readlines()
         label_data = json.load(f)
         
     imagePath = label_data[imageName]['imagePath']
-    imagePath = 'I:/Shared drives/broccoliProject/'+imagePath[40:]
+    imagePath = ROOT + imagePath[40:]
     
-    print(imagePath)
+    # print(imagePath)
     img = imageio.imread(imagePath)
     h, w, _ = img.shape
-    one_mask = np.ones((h, w, 1), dtype=np.uint8)*255
+    one_mask = np.zeros((h, w, 1), dtype=np.uint8)
     points = label_data[imageName]['points']
     
     # convert to numpy array
@@ -137,12 +141,12 @@ def one_image(imageName, base=75):
         
         # print(mask.shape)
         one_mask[y0:y1, x0:x1, :] = mask
-        
-    return mask2polygon(one_mask)
+    # imageio.imsave('./test.png', one_mask)
+    return mask2polygon(one_mask[:, :, 0])
     
     # imageio.imwrite(os.path.join(MASK_PATH, name), mixed)
     
-def from_dir(JSON_PATH):
+def Aux_label(json_path):
     """[summary]
 
     Args:
@@ -151,14 +155,44 @@ def from_dir(JSON_PATH):
     Returns:
         [list]: [list of cropped images with shape (n, c, w, h)]
     """    
-    json_list = [entry.name for entry in os.scandir(IMG_PATH) if entry.name.endswith('.json')]
-    print(img_list)
-    for item in tqdm(img_list):
-        polygons = one_image(item)
-        
+    with open(json_path, 'r', encoding='utf-8') as f:
+        labelme_json = json.load(f)
+    
+    img_path = labelme_json['imagePath']
+    img_name = img_path.split('/')[-1]
+    project_name = img_path.split('/')[-2]
+    map_label = f'{ROOT_ON_RAW_PATH}/{project_name}.json'
+    
+    print(f"start processing on: {json_path}")
+    polygons = one_image(img_name, map_label=map_label)
+    print("Prediction finished")
+    
+    for polygon in polygons:  
+        coords = {
+            "label": "broccoli",
+            "points": polygon,
+            "group_id": None,
+            "shape_type": "polygon",
+            "flags": {}
+        }
+        labelme_json['shapes'].append(coords)
+    
+    new_name = json_path.replace('blank', 'aux')
+    print(f"saving result to {new_name}")
+    with open(json_path, 'w+') as f:
+        f.write(json.dumps(labelme_json,indent=1))
+    os.rename(json_path, new_name)
+    print("result saved")
 
-
-
+def Random_select_aux(number):
+    json_list = [f'{JSON_PATH}/{entry.name}' for entry in os.scandir(JSON_PATH) if ((entry.name.startswith('blank')) & (entry.name.endswith('.json')))]
+    # print(json_list)
+    selected = random.sample(json_list, number)
+    print(f'{number} files selected:')
+    print(selected)
+    for item in selected:
+        Aux_label(item)
+    
 if __name__ == "__main__":
     # pass
-    from_dir(IMG_PATH)
+    Random_select_aux(1)
