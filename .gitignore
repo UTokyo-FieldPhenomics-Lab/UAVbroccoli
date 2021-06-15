@@ -8,4 +8,5 @@
 test/
 yolov5
 deeplab/checkpoints
+deeplab/seg_results
 Labelme.exe

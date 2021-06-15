@@ -22,7 +22,7 @@ from torchvision import models
 from model import createDeepLabv3
 from dataset import Broccoli, Prediction
 
-class Interface:
+class Inference:
     def __init__(self, model_weight, img_dir, out_dir, device):
         self.model = models.segmentation.deeplabv3_resnet50(pretrained=False, progress=True)
         self.model.classifier = DeepLabHead(2048, 1)
@@ -74,5 +74,5 @@ class Interface:
 if __name__ == "__main__":
     device = "cuda"
     import args
-    interface = Interface('./checkpoints/full/best_model.tar', r'I:\Shared drives\broccoliProject\10_anotation_use\geotiff\broccoli_tanashi_5_20200514_P4M_10m', out_dir='./seg_result/broccoli_tanashi_5_20200514_P4M_10m', device=device) 
-    interface.pred()
+    inference = Inference('./checkpoints/full/best_model.tar', r'I:\Shared drives\broccoliProject\10_anotation_use\geotiff\broccoli_tanashi_5_20200514_P4M_10m', out_dir='./seg_result/broccoli_tanashi_5_20200514_P4M_10m', device=device) 
+    inference.pred()

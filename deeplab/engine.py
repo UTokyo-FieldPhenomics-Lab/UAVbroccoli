@@ -1,24 +1,47 @@
 import os
 import copy
-
+import time
 import numpy as np
+from torch._C import dtype
 
 from tqdm import tqdm
 # from sklearn.metrics import f1_score, roc_auc_score
 from prefetch_generator import BackgroundGenerator
 
 import torch
-
-from torchvision import transforms
+import torch.nn as nn
+import torch.nn.functional as F
 from torchvision.utils import make_grid
 from torch.utils.data import DataLoader
 
+import albumentations as A
+from albumentations.pytorch import ToTensorV2
+import matplotlib.pyplot as plt
 
 from model import createDeepLabv3
 from dataset import Broccoli
 
 seed = 1123
 torch.manual_seed(seed)
+
+class FocalLoss(nn.Module):
+    def __init__(self, alpha=0.25, gamma=2, size_average=True, ignore_index=255):
+        super(FocalLoss, self).__init__()
+        self.alpha = alpha
+        self.gamma = gamma
+        self.ignore_index = ignore_index
+        self.size_average = size_average
+
+    def forward(self, inputs, targets):
+        ce_loss = F.cross_entropy(
+            inputs, targets, reduction='none', ignore_index=self.ignore_index)
+        pt = torch.exp(-ce_loss)
+        focal_loss = self.alpha * (1-pt)**self.gamma * ce_loss
+        if self.size_average:
+            return focal_loss.mean()
+        else:
+            return focal_loss.sum()
+
 
 class DataloaderX(DataLoader):
     def __iter__(self):
@@ -56,21 +79,23 @@ class deeplab_engine:
         self.optim = torch.optim.SGD(self.model.parameters(), lr=self.lr)
         
 
-        self.criterian = torch.nn.MSELoss(reduction='mean')
+        # self.criterian = torch.nn.MSELoss(reduction='mean')
+        self.criterian = nn.CrossEntropyLoss(ignore_index=255, reduction='mean')
+        # self.criterian = FocalLoss(ignore_index=255, size_average=False)
+        # self.criterian = MixSoftmaxCrossEntropyLoss()
         
-        self.transform = transforms.Compose([
-            # transforms.RandomResizedCrop(128, scale=(0.08, 1.0), ratio=(0.75, 1.3333333333333333), interpolation=2),
-            # transforms.RandomRotation((-90,90)),
-            # transforms.ColorJitter(brightness=0, contrast=0, saturation=0, hue=0),
-            # transforms.RandomHorizontalFlip(p=0.8),
-            # transforms.RandomVerticalFlip(p=0.8),
-            # transforms.RandomAffine((-5, 5)),
-            # # transforms.GaussianBlur(kernel_size, sigma=(0.1, 2.0)),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        ])
+        transform = A.Compose(
+            [
+                A.Resize(128, 128),
+                A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=30, p=0.5),
+                A.RGBShift(r_shift_limit=25, g_shift_limit=25, b_shift_limit=25, p=0.5),
+                A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.5),
+                A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
+                ToTensorV2(),
+            ]
+        )
         
-        self.train_ = Broccoli(coco_label_path=self.coco_label_path, size=self.im_size)
+        self.train_ = Broccoli(coco_label_path=self.coco_label_path, size=self.im_size, transforms=transform)
         # self.valid_ = Broccoli(img_dir=self.img_dir, mask_dir=self.mask_dir, size=self.im_size, data_type="validation")
 
         self.dataloader_train = DataloaderX(
@@ -139,37 +164,34 @@ class deeplab_engine:
         
         # train phase
         self.model.train()
+        start = time.time()
         for epoch in range(self.n_epochs):
             # Dataloader returns the batches
             batch_loss = 0.
             mious = 0.
-            f1 = 0.
-            ras = 0.
+
             len_train = len(self.dataloader_train)
-            for sample in tqdm(self.dataloader_train):
-
-                img = sample["image"].to(self.device)
-                mask = sample["mask"].to(self.device)
-
+            for img, mask in tqdm(self.dataloader_train):
+                # print(np.unique(mask))
                 ## Train ##
                 self.optim.zero_grad()
-
+                img = img.to(self.device)
+                # print(np.unique(mask))
+                # mask = mask.to(self.device, dtype=torch.long)
+                mask = mask.to(self.device, dtype=torch.long)
+                # mask = mask.view(-1, 1, 128, 128)
+                # print(mask[0])
                 pred = self.model(img)
+                
+                pred_masks = pred["out"]
+                
                 train_loss = self.criterian(pred["out"], mask)
 
-                
-                y_pred = pred['out'].data.cpu().numpy().ravel()
-                y_true = mask.data.cpu().numpy().ravel()
-                
-                pred_masks = pred['out'].detach().cpu().numpy()
-                pred_masks[pred_masks < 0.5] = 0
-                pred_masks[pred_masks >= 0.5] = 1
-                
+                pred_masks = pred_masks.argmax(1).detach().cpu().numpy()
+                # pred_masks[pred_masks < 0.5] = 0
+                # pred_masks[pred_masks >= 0.5] = 1
+                # print(pred_masks.shape)
                 ground_truth = mask.detach().cpu().numpy()
-                
-                # Use a classification threshold of 0.1
-                # f1_score_ = f1_score(y_true > 0, y_pred > 0.1)         
-                # roc_auc_score_ = roc_auc_score(y_true.astype('uint8'), y_pred)
                 miou = self.iou_mean(pred_masks, ground_truth)
 
                 # Update gradients
@@ -186,60 +208,43 @@ class deeplab_engine:
                 
             train_losses += [batch_loss / len_train]
             train_mious += [mious / len_train]
-            # train_f1_scores += [f1 / len_train]
-            # train_roc_auc_score += [ras / len_train]
-                
-            # # validation phase
-            # self.model.eval()
-            # with torch.no_grad():
-            #     batch_loss = 0.
-            #     mious = 0.
-            #     f1 = 0.
-            #     ras = 0.
-            #     len_valid = len(self.dataloader_valid)
-            #     for sample in tqdm(self.dataloader_valid):
-
-            #         img = sample["image"].to(self.device)
-            #         mask = sample["mask"].to(self.device)
-
-
-            #         pred = self.model(img)
-            #         valid_loss = self.criterian(pred["out"], mask)
-                    
-            #         y_pred = pred['out'].data.cpu().numpy().ravel()
-            #         y_true = mask.data.cpu().numpy().ravel()
-                    
-            #         pred_masks = pred['out'].detach().cpu().numpy()
-            #         pred_masks[pred_masks < 0.5] = 0
-            #         pred_masks[pred_masks >= 0.5] = 1
-                    
-            #         ground_truth = mask.detach().cpu().numpy()
-                    
-            #         # Use a classification threshold of 0.1
-            #         f1_score_ = f1_score(y_true > 0, y_pred > 0.1)
-            #         roc_auc_score_ = roc_auc_score(y_true.astype('uint8'), y_pred)
-            #         miou = self.iou_mean(pred_masks, ground_truth)
-                    
-            #         # Keep track of the losses
-            #         batch_loss += valid_loss.item()
-            #         mious += miou
-            #         f1 += f1_score_
-            #         ras += roc_auc_score_
-                    
-            #     valid_losses += [batch_loss / len_valid]
-            #     valid_mious += [mious / len_valid]
-            #     valid_f1_scores += [f1 / len_valid]
-            #     valid_roc_auc_score += [ras / len_valid]
-
 
             ### Visualization code ###
+            fig = plt.figure(figsize=(20,10))
+
+            ax1 = fig.add_subplot(121)
+            ax1.set_xticks([])
+            ax1.set_yticks([])
+            image_tensor = (img + 1) / 2
+            image_unflat = image_tensor.detach().cpu()
+            image_grid = make_grid(image_unflat[:16], nrow=4)
+            ax1.imshow(image_grid.permute(1, 2, 0).squeeze())
+
+            ax2 = fig.add_subplot(122)
+            ax2.set_xticks([])
+            ax2.set_yticks([])
+
+            image_tensor = torch.from_numpy(pred_masks).view(-1, 1, 128 ,128)
+            image_unflat = image_tensor.detach().cpu()
+            image_grid = make_grid(image_unflat[:16], nrow=4)
+            ax2.imshow(image_grid.permute(1, 2, 0).squeeze())
+            
+
+            if not os.path.exists(f'./seg_results'):
+                os.makedirs(f'./seg_results')
+            plt.savefig(f'./seg_results/epoch_{epoch+1}.jpg')
+            # plt.show()
+            plt.close()
+            
             print(f"epoch {epoch+1}, Train loss: {train_losses[-1]:.3f}, Train mIOU: {train_mious[-1]:.3f}")
 
                 
             if train_mious[-1] > best_miou:
                 best_miou = train_mious[-1]
                 best_model_wts = copy.deepcopy(self.model.state_dict())
-                
+        end = time.time()        
+        print(f"total time cose: {start-end}")
+        print(f"saving model")
         ## Save Model ##
         checkpoint = {
                 'model_state_dict': self.model.state_dict(),

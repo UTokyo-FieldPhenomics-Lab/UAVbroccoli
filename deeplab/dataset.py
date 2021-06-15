@@ -15,7 +15,7 @@ from pycocotools.coco import COCO
 ROOT = 'I:/Shared drives/broccoliProject/'
 
 class Broccoli(torch.utils.data.Dataset):
-    def __init__(self, coco_label_path, size=256, transforms=transforms.ToTensor()):
+    def __init__(self, coco_label_path, size=256, transforms=None):
         super().__init__()
         self.coco = COCO(coco_label_path)
         imgIds = self.coco.getImgIds()
@@ -30,7 +30,7 @@ class Broccoli(torch.utils.data.Dataset):
     def get_sub(self, img, ann):
         
         h, w, _ =img.shape 
-        transform = transforms.Resize((self.size, self.size))
+        # transform = transforms.Resize((self.size, self.size))
         
         xmin = ann["bbox"][0]
         ymin = ann["bbox"][1]
@@ -44,12 +44,12 @@ class Broccoli(torch.utils.data.Dataset):
         ymax = ymax + base if (ymax + base) <= w else w
         
         sub_image = img[int(ymin):int(ymax), int(xmin):int(xmax), :]
-        mask = self.coco.annToMask(ann) * 255.
+        mask = self.coco.annToMask(ann)
         mask = mask[int(ymin):int(ymax), int(xmin):int(xmax)]
-        sub_image = Image.fromarray(sub_image)
-        mask = Image.fromarray(mask)
+        # sub_image = Image.fromarray(sub_image)
+        # mask = Image.fromarray(mask)
         
-        return transform(sub_image), transform(mask).convert('L')
+        return sub_image, mask
         
     def __len__(self) -> int:
         return len(self.anns)
@@ -63,11 +63,12 @@ class Broccoli(torch.utils.data.Dataset):
         sub, mask = self.get_sub(img, ann)
 
         if self.transforms:
-            sub = self.transforms(sub)
-            mask = self.transforms(mask)
-        sample = {"image": sub, "mask": mask}
-                 
-        return sample 
+            transformed = self.transforms(image=sub, mask=mask)
+            # mask = self.transforms(mask)
+            sub = transformed['image']
+            mask = transformed['mask']
+        
+        return sub.float(), mask.float()
         
         
 # class Prediction(torch.utils.data.Dataset):
