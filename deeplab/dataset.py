@@ -4,32 +4,34 @@ import torch
 import torch.nn as nn
 from torchvision import transforms
 
+from skimage.transform import resize
 import numpy as np
 from PIL import Image
 import imageio
 from sklearn import model_selection
-from pycocotools.coco import COCO
-
+from tqdm import tqdm
 # from tqdm import tqdm
 
 ROOT = 'I:/Shared drives/broccoliProject/'
 
 class Broccoli(torch.utils.data.Dataset):
-    def __init__(self, coco_label_path, size=256, transforms=None):
+    def __init__(self, coco, size=256, save_data=True, transforms=None):
         super().__init__()
-        self.coco = COCO(coco_label_path)
-        imgIds = self.coco.getImgIds()
-        annIds = self.coco.getAnnIds()
-        self.images = self.coco.loadImgs(imgIds)
-        self.anns = self.coco.loadAnns(annIds)
+        self.coco = coco
+        imgIds = coco.getImgIds()
+        annIds = coco.getAnnIds()
+        self.images = coco.loadImgs(imgIds)
+        self.anns = coco.loadAnns(annIds)
         
         self.size = size
         self.transforms = transforms
+        if save_data:
+            self.save2npy()
+        self.train_x, self.train_y = self.load_npy()
         
-
     def get_sub(self, img, ann):
         
-        h, w, _ =img.shape 
+        h, w, _ =img.shape
         # transform = transforms.Resize((self.size, self.size))
         
         xmin = ann["bbox"][0]
@@ -40,35 +42,72 @@ class Broccoli(torch.utils.data.Dataset):
         base = 50
         xmin = xmin - base if (xmin - base) >= 0 else 0
         ymin = ymin - base if (ymin - base) >= 0 else 0
-        xmax = xmax + base if (xmax + base) <= h else h
-        ymax = ymax + base if (ymax + base) <= w else w
-        
+        xmax = xmax + base if (xmax + base) <= w else w
+        ymax = ymax + base if (ymax + base) <= h else h
+
         sub_image = img[int(ymin):int(ymax), int(xmin):int(xmax), :]
         mask = self.coco.annToMask(ann)
         mask = mask[int(ymin):int(ymax), int(xmin):int(xmax)]
         # sub_image = Image.fromarray(sub_image)
         # mask = Image.fromarray(mask)
-        
+        sub_image = resize(sub_image, (128, 128))
+        mask = resize(mask*255, (128, 128))
+        mask[mask>=0.5] = 1
+        mask[mask<0.5] = 0
+        # mask *= 255
+        # sub_image = sub_image.astype(np.uint8)
+        # mask = mask.astype(np.uint8)
         return sub_image, mask
+        
+    def save2npy(self):
+        print("saving images into .npy")
+        Imgs = []
+        Masks = []
+        for image in tqdm(self.images):
+            imagePath = ROOT + image['imagePath'][6:]
+            img = imageio.imread(imagePath)
+            id = image['id']
+            anns_ids = self.coco.getAnnIds(imgIds = [id])
+            anns = self.coco.loadAnns(ids=anns_ids)
+            for ann in anns:
+                sub_image, mask = self.get_sub(img, ann)
+                Imgs.append(sub_image)
+                Masks.append(mask)
+            os.makedirs('./temp', exist_ok=True)
+        with open('./temp/images.npy', 'wb') as f:
+            np.save(f, np.array(Imgs))
+        with open('./temp/masks.npy', 'wb') as f:
+            np.save(f, np.array(Masks))
+
+        print("save finished")
+            
+    def load_npy(self):
+        with open('./temp/images.npy', 'rb') as f:
+            train_x = np.load(f)
+        with open('./temp/masks.npy', 'rb') as f:
+            train_y = np.load(f)
+        return train_x, train_y
         
     def __len__(self) -> int:
         return len(self.anns)
     
     def __getitem__(self, index):
-        ann = self.anns[index]
-        image = self.coco.loadImgs([ann['image_id']])[0]
-        imagePath = ROOT + image['imagePath'][6:]
-        # print(imagePath)
-        img = imageio.imread(imagePath)
-        sub, mask = self.get_sub(img, ann)
-
+        sub = self.train_x[index] * 255
+        # print(sub)
+        mask = self.train_y[index] * 255
+        mask[mask>=0.5] = 1
+        mask[mask<0.5] = 0
+    
+        sub = sub.astype(np.uint8)
+        mask = mask.astype(np.uint8)
+        # print(sub, mask)
         if self.transforms:
             transformed = self.transforms(image=sub, mask=mask)
             # mask = self.transforms(mask)
             sub = transformed['image']
             mask = transformed['mask']
         
-        return sub.float(), mask.float()
+        return sub, mask
         
         
 # class Prediction(torch.utils.data.Dataset):

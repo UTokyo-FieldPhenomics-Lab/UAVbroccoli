@@ -1,9 +1,9 @@
-coco_label_path = 'I:/Shared drives/broccoliProject/11_labelme_json/coco/test.json'
+json_path = 'I:/Shared drives/broccoliProject/11_labelme_json/json'
 out_dir = './checkpoints'
-n_epochs = 100
+n_epochs = 200
 n_classes = 1
-batch_size = 16
-lr = 0.01
+batch_size = 64
+lr = 0.002
 beta_1 = 0.5
-beta_2 = 0.999
+beta_2 = 0.9
 im_size = 128

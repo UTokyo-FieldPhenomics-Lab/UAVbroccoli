@@ -76,7 +76,7 @@ def predict_batch(model, batch):
         return np.array(masks, dtype=np.uint8)
 
 
-def one_image(imageName, map_label, base=75):
+def one_image(imageName, map_label, base=60):
     transform1 = transforms.Compose([
         transforms.Resize((arg.im_size, arg.im_size)),
         transforms.ToTensor(),
@@ -141,7 +141,7 @@ def one_image(imageName, map_label, base=75):
         
         # print(mask.shape)
         one_mask[y0:y1, x0:x1, :] = mask
-    # imageio.imsave('./test.png', one_mask)
+    imageio.imsave('./test.png', one_mask)
     return mask2polygon(one_mask[:, :, 0])
     
     # imageio.imwrite(os.path.join(MASK_PATH, name), mixed)
@@ -159,10 +159,11 @@ def Aux_label(json_path):
         labelme_json = json.load(f)
     
     img_path = labelme_json['imagePath']
-    img_name = img_path.split('/')[-1]
-    project_name = img_path.split('/')[-2]
-    map_label = f'{ROOT_ON_RAW_PATH}/{project_name}.json'
-    
+    # print(img_path)
+    img_name = img_path.split('\\')[-1]
+    project_name = img_path.split('\\')[-2]
+    map_label = f'{ROOT_ON_RAW_PATH}{project_name}.json'
+    # print(map_label)
     print(f"start processing on: {json_path}")
     polygons = one_image(img_name, map_label=map_label)
     print("Prediction finished")
