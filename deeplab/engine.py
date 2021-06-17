@@ -87,10 +87,11 @@ class deeplab_engine:
         print('initializing training set...')
         print(f'{len(json_list)} labeled json files found')
         coco_label = labelme2json(json_list)
-        with open('./temp.json', 'w+') as f:
+        os.makedirs('./temp', exist_ok=True)
+        with open('./temp/temp.json', 'w+') as f:
             f.write(json.dumps(coco_label))
         
-        self.coco = COCO('./temp.json')
+        self.coco = COCO('./temp/temp.json')
         
     def init_model(self):
         print("initilizing network")
