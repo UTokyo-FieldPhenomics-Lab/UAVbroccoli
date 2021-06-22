@@ -1,6 +1,7 @@
 */.ipynb_checkpoints/*
+*/.vscode/*
 */out/*
-*/.ipynb_checkpoints/*
+
 */train/*
 */validation/*
 */__pycache__/*
