@@ -6,10 +6,13 @@
 */__pycache__/*
 
 test/
-# yolov5
+yolov5
 deeplab/checkpoints
 deeplab/seg_results
 deeplab/temp
 deeplab/test
 
+broccoli_data/
+broccoli_data_2021/
 Labelme.exe
+test.ipynb

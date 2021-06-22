@@ -33,9 +33,12 @@ from deeplab import args as arg
 from utils.mask2polygon import mask2polygon
 from utils.labelme2coco import labelme2json
 
-ROOT = 'I:/Shared drives/broccoliProject/'
-ROOT_ON_RAW_PATH = 'I:/Shared drives/broccoliProject/11_labelme_json/root_on_raw.json/'
-JSON_PATH = 'I:/Shared drives/broccoliProject/11_labelme_json/json'
+from shutil import copyfile
+
+ROOT = 'G:/Shared drives/broccoliProject/'
+ROOT_ON_RAW_PATH = 'G:/Shared drives/broccoliProject/11_labelme_json/root_on_raw.json/'
+JSON_PATH = 'G:/Shared drives/broccoliProject/11_labelme_json/json'
+BACK_UP = 'G:/Shared drives/broccoliProject/11_labelme_json/aux_iter_backup'
 MASK_PATH = './deeplab/test/masks/'
 os.makedirs(MASK_PATH, exist_ok=True)
 
@@ -141,12 +144,12 @@ def one_image(imageName, map_label, base=60):
         
         # print(mask.shape)
         one_mask[y0:y1, x0:x1, :] = mask
-    imageio.imsave('./test.png', one_mask)
+    # imageio.imsave('./test.png', one_mask)
     return mask2polygon(one_mask[:, :, 0])
     
     # imageio.imwrite(os.path.join(MASK_PATH, name), mixed)
     
-def Aux_label(json_path):
+def Aux_label(entry, version='v1'):
     """[summary]
 
     Args:
@@ -155,6 +158,7 @@ def Aux_label(json_path):
     Returns:
         [list]: [list of cropped images with shape (n, c, w, h)]
     """    
+    json_path = entry.path
     with open(json_path, 'r', encoding='utf-8') as f:
         labelme_json = json.load(f)
     
@@ -178,21 +182,24 @@ def Aux_label(json_path):
         }
         labelme_json['shapes'].append(coords)
     
-    new_name = json_path.replace('blank', 'aux')
+    new_name = json_path.replace('blank', f'aux_{version}')
+    json_name = entry.name.replace('blank', f'aux_{version}')
     print(f"saving result to {new_name}")
     with open(json_path, 'w+') as f:
         f.write(json.dumps(labelme_json,indent=1))
     os.rename(json_path, new_name)
+
+    copyfile(new_name, f'{json_path}/../../aux_iter_backup/{json_name}')
     print("result saved")
 
-def Random_select_aux(number):
-    json_list = [f'{JSON_PATH}/{entry.name}' for entry in os.scandir(JSON_PATH) if ((entry.name.startswith('blank')) & (entry.name.endswith('.json')))]
+def Random_select_aux(number, version='v1'):
+    json_list = [entry for entry in os.scandir(JSON_PATH) if ((entry.name.startswith('blank')) & (entry.name.endswith('.json')))]
     # print(json_list)
     selected = random.sample(json_list, number)
     print(f'{number} files selected:')
     print(selected)
     for item in selected:
-        Aux_label(item)
+        Aux_label(item, version)
     
 if __name__ == "__main__":
     # pass

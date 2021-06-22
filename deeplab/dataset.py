@@ -12,7 +12,7 @@ from sklearn import model_selection
 from tqdm import tqdm
 # from tqdm import tqdm
 
-ROOT = 'I:/Shared drives/broccoliProject/'
+ROOT = 'G:/Shared drives/broccoliProject/'
 
 class Broccoli(torch.utils.data.Dataset):
     def __init__(self, coco, size=256, save_data=True, transforms=None):

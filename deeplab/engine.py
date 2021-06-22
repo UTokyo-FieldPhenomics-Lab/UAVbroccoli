@@ -86,7 +86,7 @@ class deeplab_engine:
         json_list = [entry.name for entry in os.scandir(self.json_path) if ((entry.name.endswith('.json')) & (entry.name.startswith('labeled_')))]
         print('initializing training set...')
         print(f'{len(json_list)} labeled json files found')
-        coco_label = labelme2json(json_list)
+        coco_label = labelme2json(self.json_path, json_list)
         os.makedirs('./temp', exist_ok=True)
         with open('./temp/temp.json', 'w+') as f:
             f.write(json.dumps(coco_label))
@@ -111,8 +111,9 @@ class deeplab_engine:
         transform = A.Compose(
             [
                 # A.Resize(128, 128),
-                # A.VerticalFlip(p=0.5),              
-                # A.RandomRotate90(p=0.5),
+                A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=30, p=0.5),
+                A.VerticalFlip(p=0.5),              
+                A.RandomRotate90(p=0.5),
                 A.RGBShift(r_shift_limit=25, g_shift_limit=25, b_shift_limit=25, p=0.5),
                 A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.5),
                 A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
@@ -158,25 +159,22 @@ class deeplab_engine:
         return iousSum/n_classes
     
     def train(self, ckpt=None):
-        # if ckpt != None:
-        #     # load_check_point
-        #     checkpoint_dir = ckpt
-        #     checkpoint = torch.load(checkpoint_dir)
-        #     gen_weight = checkpoint["G_state_dict"]
-        #     crit_weight = checkpoint["D_state_dict"]
-        #     self.gen.load_state_dict(gen_weight)
-        #     self.crit.load_state_dict(crit_weight)
-        #     base = checkpoint["epoch"]
-        # else:
-        #     def weights_init(m):
-        #         if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
-        #             torch.nn.init.normal_(m.weight, 0.0, 0.02)
-        #         if isinstance(m, nn.BatchNorm2d):
-        #             torch.nn.init.normal_(m.weight, 0.0, 0.02)
-        #             torch.nn.init.constant_(m.bias, 0)
-        #     gen = self.gen.apply(weights_init)
-        #     crit = self.crit.apply(weights_init)
-        #     base = 0
+        if ckpt != None:
+            # load_check_point
+            checkpoint_dir = ckpt
+            checkpoint = torch.load(checkpoint_dir)
+            weight = checkpoint["model_state_dict"]
+            self.model.load_state_dict(weight)
+            base = checkpoint["epoch"]
+        else:
+            def weights_init(m):
+                if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
+                    torch.nn.init.normal_(m.weight, 0.0, 0.02)
+                if isinstance(m, nn.BatchNorm2d):
+                    torch.nn.init.normal_(m.weight, 0.0, 0.02)
+                    torch.nn.init.constant_(m.bias, 0)
+            self.model = self.model.apply(weights_init)
+            base = 0
 
 
         train_losses = []
@@ -190,7 +188,7 @@ class deeplab_engine:
         # train phase
         self.model.train()
         start = time.time()
-        for epoch in range(self.n_epochs):
+        for epoch in range(base, base + self.n_epochs):
             # Dataloader returns the batches
             batch_loss = 0.
             mious = 0.

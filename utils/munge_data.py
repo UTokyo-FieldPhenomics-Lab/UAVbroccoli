@@ -7,9 +7,11 @@ from sklearn import model_selection
 from pycocotools.coco import COCO
 from tqdm import tqdm
 
+from shutil import copyfile
 
-JSON_PATH = '../test/coco_test.json'
-OUTPUT_PATH = '../test/broccoli_data'
+ROOT = 'G:/Shared drives/broccoliProject2021/'
+JSON_PATH = ROOT + '11_instance_seg/coco_json/yolo_21.json'
+OUTPUT_PATH = 'C:/Users/ddgip/works/UAVbroccoli/broccoli_data_2021'
 
 def process_data(images, data_type="train"):
     for im in tqdm(images, total=len(images)):
@@ -18,6 +20,10 @@ def process_data(images, data_type="train"):
         anns = coco.loadAnns(annIds)
         
         image_name = im['file_name']
+        src = ROOT + im['imagePath'][6:]
+        dst = f'{OUTPUT_PATH}/images/{data_type}'
+        os.makedirs(dst, exist_ok=True)
+        copyfile(src, f'{dst}/{image_name}')
         filename = re.sub('jpg', 'txt', image_name, flags=re.IGNORECASE)
         width = im['width']
         height = im['height']
@@ -67,13 +73,13 @@ if __name__ == "__main__":
     images = coco.loadImgs(imgIds)
     
     #train, validation split
-    train, valid = model_selection.train_test_split(
-        images,
-        test_size=0.1,
-        random_state=42,
-        shuffle=True        
-    )
+    # train, valid = model_selection.train_test_split(
+    #     images,
+    #     test_size=0.1,
+    #     random_state=42,
+    #     shuffle=True        
+    # )
     
-    process_data(train, data_type="train")
-    process_data(valid, data_type="validation")
+    process_data(images, data_type="train")
+    process_data(images, data_type="validation")
     
