@@ -29,15 +29,22 @@ from easyric.calculate import geo2raw, geo2tiff
     
 class Paths():
     
-    def __init__(self, key):
+    def __init__(self, key, year=2020):
         
-        self.root =  r"Y:\hwang_Pro\data\2020_tanashi_broccoli"
+        if year == 2020:
+            self.root = r"Y:\hwang_Pro\data\2020_tanashi_broccoli"
+        else:
+            self.root = r"Y:\hwang_Pro\data\2021_tanashi_broccoli"
         
         self.project_name = self.generate_name(key)
         
         self.raw_img =f"{self.root}/00_rgb_raw/{self.project_name}"
-        self.pix4d_project = f"{self.root}/01_tanashi_broccoli2020_RGB_AP/{self.project_name}"
-        self.pix4d_param = f"{self.pix4d_project}/params"
+        if year == 2020:
+            self.pix4d_project = f"{self.root}/01_tanashi_broccoli2020_RGB_AP/{self.project_name}"
+            self.pix4d_param = f"{self.pix4d_project}/params"
+        else:
+            self.pix4d_project = f"{self.root}/01_pix4d_projects/{self.project_name}"
+            self.pix4d_param = f"{self.pix4d_project}/1_initial/params"
         
         self.ins_label = f"{self.root}/11_instance_seg/detect/{self.project_name}/labels"
         self.ins_label_bg = f"{self.root}/11_instance_seg/detect+bg/{self.project_name}/labels"
@@ -74,7 +81,16 @@ class Paths():
                     "0525_m"  :'broccoli_tanashi_5_20200525_mavicRGB_15m_M', 
                     "0526_p"  :'broccoli_tanashi_5_20200526_P4M_10m_after', 
                     #"0526_p_b":'broccoli_tanashi_5_20200526_P4M_10m_before',   # dom not good
-                    "0528_p"  :'broccoli_tanashi_5_20200528_P4M_10m_before'}
+                    "0528_p"  :'broccoli_tanashi_5_20200528_P4M_10m_before',
+                    # ============== 2021 ==============
+                    "210412"  :"broccoli_tanashi_5_20210412_P4RTK_15m_M",
+                    "210512"  :"broccoli_tanashi_5_20210512_P4RTK_15m_M",
+                    "210514"  :"broccoli_tanashi_5_20210514_P4RTK_15m_M_abefore",
+                    "210515"  :"broccoli_tanashi_5_20210515_P4RTK_15m_M",
+                    "210519"  :"broccoli_tanashi_5_20210519_P4RTK_15m_M_abefore",
+                    "210520"  :"broccoli_tanashi_5_20210520_P4RTK_15m_M_abefore",
+                    "210526"  :"broccoli_tanashi_5_20210526_P4RTK_15m_M",
+                   }
         
         if key in all_date.values():
             return key
