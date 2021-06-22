@@ -6,7 +6,7 @@
 */__pycache__/*
 
 test/
-yolov5
+# yolov5
 deeplab/checkpoints
 deeplab/seg_results
 deeplab/temp
