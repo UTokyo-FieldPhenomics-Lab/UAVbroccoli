@@ -1,4 +1,4 @@
-json_path = 'I:/Shared drives/broccoliProject/11_labelme_json/json'
+json_path = 'G:/Shared drives/broccoliProject/11_labelme_json/json'
 out_dir = './checkpoints'
 n_epochs = 200
 n_classes = 1
