@@ -2,17 +2,20 @@ from config import *
 from easyric.io.json import dict2json
 
 if __name__ == "__main__":
-    todo_pool = ["0520_p", "0522_p", "0525_p", "0526_p", "0528_p"]
+    #todo_pool = ["0520_p", "0522_p", "0525_p", "0526_p", "0528_p"]
+    todo_pool = ["210512", "210514", "210515", "210519", "210520", "210526"]
     
     for tp in todo_pool:
-        p2 = Paths(tp)
+        #p2 = Paths(tp)
+        p2 = Paths(tp, year=2021)
 
         p4d = Pix4D(project_path=p2.pix4d_project, 
                     raw_img_path=p2.raw_img, 
                     project_name=p2.project_name,
                     param_folder=p2.pix4d_param)
 
-        root = shapefile.Reader(f"{p2.root}/10_locate_by_cv/color_label_0417_mavic/keep_points_manual.shp")
+        #root = shapefile.Reader(f"{p2.root}/10_locate_by_cv/color_label_0417_mavic/keep_points_manual.shp")
+        root = shapefile.Reader(f"{p2.root}/12_locate_by_yolo/sorted_id.shp")
         
         points_np = np.zeros((0,2))
         for i, point in enumerate(root.shapes()):
