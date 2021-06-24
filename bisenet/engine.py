@@ -3,12 +3,10 @@ import sys
 import copy
 import time
 import json
-from albumentations.augmentations.geometric.resize import Resize
 
 import numpy as np
 
 from tqdm import tqdm
-# from sklearn.metrics import f1_score, roc_auc_score
 from prefetch_generator import BackgroundGenerator
 
 import torch
@@ -22,7 +20,7 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import matplotlib.pyplot as plt
 
-from model import createDeepLabv3
+from bisenetv2 import BiSeNetV2
 from dataset import Broccoli
 from pycocotools.coco import COCO
 sys.path.append("..") 
@@ -35,30 +33,28 @@ torch.manual_seed(seed)
 cudnn.benchmark = True
 
 
-class FocalLoss(nn.Module):
-    def __init__(self, alpha=1, gamma=0, size_average=True, ignore_index=255):
-        super(FocalLoss, self).__init__()
-        self.alpha = alpha
-        self.gamma = gamma
-        self.ignore_index = ignore_index
-        self.size_average = size_average
+class OhemCELoss(nn.Module):
 
-    def forward(self, inputs, targets):
-        ce_loss = F.cross_entropy(
-            inputs, targets, reduction='none', ignore_index=self.ignore_index)
-        pt = torch.exp(-ce_loss)
-        focal_loss = self.alpha * (1-pt)**self.gamma * ce_loss
-        if self.size_average:
-            return focal_loss.mean()
-        else:
-            return focal_loss.sum()
+    def __init__(self, thresh, ignore_lb=255):
+        super(OhemCELoss, self).__init__()
+        self.thresh = -torch.log(torch.tensor(thresh, requires_grad=False, dtype=torch.float)).cuda()
+        self.ignore_lb = ignore_lb
+        self.criteria = nn.CrossEntropyLoss(ignore_index=ignore_lb, reduction='none')
+
+    def forward(self, logits, labels):
+        n_min = labels[labels != self.ignore_lb].numel() // 16
+        loss = self.criteria(logits, labels).view(-1)
+        loss_hard = loss[loss > self.thresh]
+        if loss_hard.numel() < n_min:
+            loss_hard, _ = loss.topk(n_min)
+        return torch.mean(loss_hard)
 
 
 class DataLoaderX(DataLoader):
     def __iter__(self):
         return BackgroundGenerator(super().__iter__())
 
-class deeplab_engine:
+class bisenet_engine:
     def __init__(self, arg, device):
 
         self.json_path = arg.json_path
@@ -96,7 +92,7 @@ class deeplab_engine:
     def init_model(self):
         print("initilizing network")
         
-        self.model = createDeepLabv3(pretrained=True).to(self.device)
+        self.model =  BiSeNetV2(n_classes=2).to(self.device)
 
         # self.optim = torch.optim.Adam(self.model.parameters(), lr=self.lr, betas=(self.beta_1, self.beta_2))
         # self.optim = torch.optim.SGD(self.model.parameters(), lr=self.lr)
@@ -105,15 +101,14 @@ class deeplab_engine:
 
         # self.criterian = torch.nn.MSELoss(reduction='mean')
         self.criterian = nn.CrossEntropyLoss(reduction='mean')
-        # self.criterian = FocalLoss(size_average=True)
-        # self.criterian = MixSoftmaxCrossEntropyLoss()
+
+        self.criteria_pre = OhemCELoss(0.7)
+        self.criteria_aux = [OhemCELoss(0.7) for _ in range(4)]
         
         transform = A.Compose(
             [
-                # A.Resize(128, 128),
-                A.ShiftScaleRotate(shift_limit=0.2, scale_limit=0.2, rotate_limit=30, p=0.5),
+                A.ShiftScaleRotate(shift_limit=0.5, scale_limit=0.2, rotate_limit=90, p=0.5),
                 A.VerticalFlip(p=0.5),              
-                A.RandomRotate90(p=0.5),
                 A.RGBShift(r_shift_limit=25, g_shift_limit=25, b_shift_limit=25, p=0.5),
                 A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.5),
                 A.Normalize(mean=(0.5, 0.5, 0.5), std=(0.5, 0.5, 0.5)),
@@ -121,14 +116,15 @@ class deeplab_engine:
             ]
         )
         
-        self.train_ = Broccoli(coco=self.coco, size=self.im_size, transforms=transform, save_data=False)
+        self.train_ = Broccoli(coco=self.coco, size=self.im_size, transforms=transform, save_data=True)
         # self.valid_ = Broccoli(img_dir=self.img_dir, mask_dir=self.mask_dir, size=self.im_size, data_type="validation")
 
         self.dataloader_train = DataLoaderX(
             self.train_,
             batch_size=self.batch_size,
-            num_workers=4,
-            shuffle=True
+            # num_workers=4,
+            shuffle=True,
+            # drop_last=True
         )
         
         print("initilization done")
@@ -163,8 +159,8 @@ class deeplab_engine:
             # load_check_point
             checkpoint_dir = ckpt
             checkpoint = torch.load(checkpoint_dir)
-            weight = checkpoint["model_state_dict"]
-            self.model.load_state_dict(weight)
+            model_weight = checkpoint["model_state_dict"]
+            self.model.load_state_dict(model_weight)
             base = checkpoint["epoch"]
         else:
             def weights_init(m):
@@ -174,6 +170,7 @@ class deeplab_engine:
                     torch.nn.init.normal_(m.weight, 0.0, 0.02)
                     torch.nn.init.constant_(m.bias, 0)
             self.model = self.model.apply(weights_init)
+
             base = 0
 
 
@@ -194,6 +191,7 @@ class deeplab_engine:
             mious = 0.
 
             len_train = len(self.dataloader_train)
+            # print(len_train)
             for img, mask in tqdm(self.dataloader_train):
                 # print(np.unique(mask))
                 ## Train ##
@@ -204,13 +202,13 @@ class deeplab_engine:
                 mask = mask.to(self.device, dtype=torch.long)
                 # mask = mask.view(-1, 1, 128, 128)
                 # print(mask[0])
-                pred = self.model(img)
-                
-                pred_masks = pred["out"]
-                
-                train_loss = self.criterian(pred["out"], mask)
+                pred_masks, *logits_aux = self.model(img)
 
-                pred_masks = pred_masks.argmax(1).detach().cpu().numpy()
+                loss_pre = self.criteria_pre(pred_masks, mask)
+                loss_aux = [crit(lgt, mask) for crit, lgt in zip(self.criteria_aux, logits_aux)]
+                train_loss = loss_pre + sum(loss_aux)
+
+                pred_ = pred_masks.argmax(1).detach().cpu().numpy()
                 # pred_masks[pred_masks < 0.5] = 0
                 # pred_masks[pred_masks >= 0.5] = 1
                 # print(pred_masks.shape)
@@ -219,7 +217,7 @@ class deeplab_engine:
                 temp = mask.clone().view((-1, 1, 128, 128))
                 # print(temp.max())
                 
-                miou = self.iou_mean(pred_masks, ground_truth)
+                miou = self.iou_mean(pred_, ground_truth)
                 
 
                 # Update gradients
@@ -252,7 +250,7 @@ class deeplab_engine:
             ax2.set_xticks([])
             ax2.set_yticks([])
 
-            image_tensor = (pred["out"].argmax(1)*255).view(-1, 1, 128 ,128)
+            image_tensor = (pred_masks.argmax(1)*255).view(-1, 1, 128 ,128)
             image_unflat = image_tensor.detach().cpu()
             image_grid = make_grid(image_unflat[:16], nrow=4)
             ax2.imshow(image_grid.permute(1, 2, 0).squeeze())
@@ -280,7 +278,7 @@ class deeplab_engine:
                 best_miou = train_mious[-1]
                 best_model_wts = copy.deepcopy(self.model.state_dict())
         end = time.time()        
-        print(f"total time cose: {end - start} s")
+        print(f"total time cost: {end - start} s")
         print(f"saving model")
         ## Save Model ##
         checkpoint = {
@@ -319,6 +317,6 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     # device = "cpu"
     
-    engine = deeplab_engine(args, device)
+    engine = bisenet_engine(args, device)
 
-    engine.train()
+    engine.train(ckpt='./checkpoints/best_model.tar')

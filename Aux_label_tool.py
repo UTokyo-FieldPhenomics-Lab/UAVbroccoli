@@ -1,53 +1,42 @@
-from genericpath import exists
 import os
 import random
 
 import json
 import numpy as np
-from numpy.core.defchararray import asarray
-from numpy.lib.polynomial import poly
 import pandas as pd
 from PIL import Image
 import imageio
-from skimage.transform import resize
 
-import matplotlib.pyplot as plt
-from torch._C import dtype
-from tqdm import tqdm
 
 import torch
-import torch.nn as nn
-import torch.nn.functional as F
-import torchvision
-from torchvision import transforms
-from torchvision.utils import make_grid
-from torch.utils.data import DataLoader
-from torch import optim
-from torch.autograd import Variable
-from torchvision.models.segmentation.deeplabv3 import DeepLabHead
-from torchvision import models
 
-from deeplab.model import createDeepLabv3
-from deeplab.dataset import Broccoli
-from deeplab import args as arg
+from torchvision import transforms
+
+
+from bisenet.bisenetv2 import BiSeNetV2
 from utils.mask2polygon import mask2polygon
-from utils.labelme2coco import labelme2json
+from utils.tolabelme import write_json
 
 from shutil import copyfile
 
 ROOT = 'G:/Shared drives/broccoliProject/'
-ROOT_ON_RAW_PATH = 'G:/Shared drives/broccoliProject/11_labelme_json/root_on_raw.json/'
-JSON_PATH = 'G:/Shared drives/broccoliProject/11_labelme_json/json'
-BACK_UP = 'G:/Shared drives/broccoliProject/11_labelme_json/aux_iter_backup'
-MASK_PATH = './deeplab/test/masks/'
-os.makedirs(MASK_PATH, exist_ok=True)
+MAP_PATH = ROOT + '13_roi_on_raw/'
+IMG_PATH = MAP_PATH
+INDEX_PATH = ROOT + '13_roi_on_raw/json_index.csv'
+JSON_PATH = ROOT + '13_roi_on_raw/train/'
+
+# ROOT_ON_RAW_PATH = 'G:/Shared drives/broccoliProject/11_labelme_json/root_on_raw.json/'
+
+# BACK_UP = 'G:/Shared drives/broccoliProject/11_labelme_json/aux_iter_backup'
+# MASK_PATH = './deeplab/test/masks/'
+# os.makedirs(MASK_PATH, exist_ok=True)
 
 device = 'cuda' if torch.cuda.is_available==True else 'cpu'
 
-model = createDeepLabv3(pretrained=False)
+model = BiSeNetV2(n_classes=2)
 model.to(device)
 
-model_weight = torch.load('./deeplab/checkpoints/best_model.tar')
+model_weight = torch.load('./bisenet/checkpoints/best_model.tar')
 model_weight = model_weight["model_state_dict"]
 
 model.load_state_dict(model_weight, strict=False)
@@ -66,9 +55,9 @@ def predict_batch(model, batch):
         
         batch.to(device)
         # print(img)
-        pred = model(batch)
+        pred, *logits_aux = model(batch)
 
-        masks = pred['out'].permute(0, 2, 3, 1).detach().cpu().numpy()
+        masks = pred.permute(0, 2, 3, 1).detach().cpu().numpy()
         # images = batch.permute(0, 2, 3, 1).detach().cpu().numpy()
         # print(masks[0])
         # masks[masks >= 0.5] = 10
@@ -79,9 +68,9 @@ def predict_batch(model, batch):
         return np.array(masks, dtype=np.uint8)
 
 
-def one_image(imageName, map_label, base=60):
+def one_image(imageName, map_label, base=70, root=IMG_PATH):
     transform1 = transforms.Compose([
-        transforms.Resize((arg.im_size, arg.im_size)),
+        transforms.Resize((128, 128)),
         transforms.ToTensor(),
         transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
     ])
@@ -93,7 +82,7 @@ def one_image(imageName, map_label, base=60):
         label_data = json.load(f)
         
     imagePath = label_data[imageName]['imagePath']
-    imagePath = ROOT + imagePath[40:]
+    imagePath = root + imagePath
     
     # print(imagePath)
     img = imageio.imread(imagePath)
@@ -145,11 +134,11 @@ def one_image(imageName, map_label, base=60):
         # print(mask.shape)
         one_mask[y0:y1, x0:x1, :] = mask
     # imageio.imsave('./test.png', one_mask)
-    return mask2polygon(one_mask[:, :, 0])
+    return mask, mask2polygon(one_mask[:, :, 0])
     
     # imageio.imwrite(os.path.join(MASK_PATH, name), mixed)
     
-def Aux_label(entry, version='v1'):
+def Aux_label(item, version='v1'):
     """[summary]
 
     Args:
@@ -158,20 +147,29 @@ def Aux_label(entry, version='v1'):
     Returns:
         [list]: [list of cropped images with shape (n, c, w, h)]
     """    
-    json_path = entry.path
-    with open(json_path, 'r', encoding='utf-8') as f:
-        labelme_json = json.load(f)
-    
-    img_path = labelme_json['imagePath']
+
+    date, img_name, r_path, status, _ = item
     # print(img_path)
-    img_name = img_path.split('\\')[-1]
-    project_name = img_path.split('\\')[-2]
-    map_label = f'{ROOT_ON_RAW_PATH}{project_name}.json'
+    project_name = r_path.split('/')[-2]
+    map_label = f'{MAP_PATH}{project_name}.json'
     # print(map_label)
-    print(f"start processing on: {json_path}")
-    polygons = one_image(img_name, map_label=map_label)
+    print(f"start processing on: {img_name}")
+    _, polygons = one_image(img_name, map_label=map_label)
     print("Prediction finished")
-    
+
+    # write_json
+    labelme = {
+        'version': "4.5.7",
+        'flags': {},
+        'shapes': [],
+        'imagePath': None,
+        'imageData': None,
+        'imageHeight': None,
+        'imageWidth': None
+    }
+
+    labelme['imagePath'] = '.' + r_path
+
     for polygon in polygons:  
         coords = {
             "label": "broccoli",
@@ -180,27 +178,77 @@ def Aux_label(entry, version='v1'):
             "shape_type": "polygon",
             "flags": {}
         }
-        labelme_json['shapes'].append(coords)
-    
-    new_name = json_path.replace('blank', f'aux_{version}')
-    json_name = entry.name.replace('blank', f'aux_{version}')
-    print(f"saving result to {new_name}")
-    with open(json_path, 'w+') as f:
-        f.write(json.dumps(labelme_json,indent=1))
-    os.rename(json_path, new_name)
+        labelme['shapes'].append(coords)
+    temp = img_name.split('.')[0]
+    json_name = f'aux_{version}_{date}_{temp}.json'
+    print(f"saving result to {json_name}")
+    with open(os.path.join(JSON_PATH, json_name), 'w+') as f:
+        f.write(json.dumps(labelme, indent=1))
 
-    copyfile(new_name, f'{json_path}/../../aux_iter_backup/{json_name}')
+    copyfile(os.path.join(JSON_PATH, json_name), f'{JSON_PATH}/../aux_backup/{json_name}')
     print("result saved")
 
-def Random_select_aux(number, version='v1'):
-    json_list = [entry for entry in os.scandir(JSON_PATH) if ((entry.name.startswith('blank')) & (entry.name.endswith('.json')))]
-    # print(json_list)
-    selected = random.sample(json_list, number)
-    print(f'{number} files selected:')
-    print(selected)
-    for item in selected:
+def Random_select_aux(number, version='v1', status='aux', save=True):
+    df = pd.read_csv(INDEX_PATH, index_col=None)
+    filtered = df[df['status']=='blank']
+    grouped = filtered.groupby('date')
+    target_list = [group.sample(n=number).date_filename.item() for _, group in grouped]
+    target_df = df[df['date_filename'].isin(target_list)]
+    for idx, item in target_df.iterrows():
         Aux_label(item, version)
-    
+    if save:
+        df.loc[df['date_filename'].isin(target_list), ['status']] = status
+        df.to_csv(INDEX_PATH, index=False)
+
+def target_select_aux(target_list, version='v0', status='verify', save=True):
+    df = pd.read_csv(INDEX_PATH, index_col=None)
+    # df['date_filename'] = df['date'].map(str) + '_' + df['file_name']
+    target_df = df[df['date_filename'].isin(target_list)]
+    for idx, item in target_df.iterrows():
+        Aux_label(item, version)
+    if save:
+        df.loc[df['date_filename'].isin(target_list), ['status']] = status
+        df.to_csv(INDEX_PATH, index=False)
 if __name__ == "__main__":
     # pass
-    Random_select_aux(1)
+    # Random_select_aux(6)
+    # target_list = ['20200518_60_DJI_0462.JPG',
+    #                 '20200520_66_DJI_0994.JPG',
+    #                 '20200520_66_DJI_0995.JPG',
+    #                 '20200520_66_DJI_0996.JPG',
+    #                 '20200520_89_DJI_0993.JPG',
+    #                 '20200520_135_DJI_0924.JPG',
+    #                 '20200522_34_DJI_0778.JPG',
+    #                 '20200522_34_DJI_0812.JPG',
+    #                 '20200522_34_DJI_0813.JPG',
+    #                 '20200522_90_DJI_0724.JPG',
+    #                 '20200522_162_DJI_0625.JPG',
+    #                 '20200525_50_DJI_0368.JPG',
+    #                 '20200525_50_DJI_0326.JPG',
+    #                 '20200525_50_DJI_0369.JPG',
+    #                 '20200525_79_DJI_0336.JPG',
+    #                 '20200525_86_DJI_0254.JPG',
+    #                 '20200526_274_DJI_0743.JPG',
+    #                 '20200526_274_DJI_0742.JPG',
+    #                 '20200526_274_DJI_0745.JPG',
+    #                 '20200526_327_DJI_0664.JPG',
+    #                 '20200526_5_DJI_0071.JPG',
+    #                 '20200528_240_DJI_0377.JPG',
+    #                 '20200528_240_DJI_0338.JPG',
+    #                 '20200528_240_DJI_0378.JPG',
+    #                 '20200528_269_DJI_0302.JPG',
+    #                 '20200528_1_DJI_0651.JPG']
+
+    # target_list = ['20200528_45_DJI_0589.JPG']
+    # target_select_aux(target_list, version='v0', status='verify', save=False)
+
+    # Random_select_aux(1, version=0, status='train')
+
+    target_list = ['20200518_3_DJI_0489.JPG',
+                    '20200520_34_DJI_0048.JPG',
+                    '20200522_33_DJI_0811.JPG',
+                    '20200525_36_DJI_0398.JPG',
+                    '20200526_44_DJI_0062.JPG',
+                    '20200528_31_DJI_0632.JPG']
+
+    target_select_aux(target_list, version='v0', status='train', save=True)

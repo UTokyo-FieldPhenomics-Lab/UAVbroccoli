@@ -12,7 +12,7 @@ from sklearn import model_selection
 from tqdm import tqdm
 # from tqdm import tqdm
 
-ROOT = 'G:/Shared drives/broccoliProject/'
+ROOT = 'G:/Shared drives/broccoliProject/13_roi_on_raw'
 
 class Broccoli(torch.utils.data.Dataset):
     def __init__(self, coco, size=256, save_data=True, transforms=None):
@@ -64,7 +64,7 @@ class Broccoli(torch.utils.data.Dataset):
         Imgs = []
         Masks = []
         for image in tqdm(self.images):
-            imagePath = ROOT + image['imagePath'][6:]
+            imagePath = ROOT + image['imagePath'][1:]
             img = imageio.imread(imagePath)
             id = image['id']
             anns_ids = self.coco.getAnnIds(imgIds = [id])
@@ -108,3 +108,37 @@ class Broccoli(torch.utils.data.Dataset):
             mask = transformed['mask']
         
         return sub, mask
+        
+        
+# class Prediction(torch.utils.data.Dataset):
+#     def __init__(self, img_dir, size=256, transforms=transforms.ToTensor()):
+#         super().__init__()
+#         self.img_dir = img_dir
+#         self.size = size
+#         self.img_list = os.listdir(f'{img_dir}')
+#         self.transforms = transforms
+        
+#     def readImage(self, img_id):
+#         # img = Image.open(img_id)
+#         img = imageio.imread(img_id)
+#         if img_id.endswith('tiff'):
+#             img = img[:, :, :3]
+#         img = Image.fromarray(img)
+#         transform = transforms.Resize((self.size, self.size))
+#         return transform(img)
+    
+#     def __len__(self) -> int:
+        
+#         return len(self.img_list)
+    
+#     def __getitem__(self, index):
+        
+#         img_id = self.img_list[index]
+        
+#         img = self.readImage(f'{self.img_dir}/{img_id}')
+
+#         if self.transforms:
+#             img = self.transforms(img)
+#         if img_id.endswith('tiff'):
+#             img_id.replace('tiff', 'jpg')
+#         return img, img_id

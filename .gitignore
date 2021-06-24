@@ -8,12 +8,16 @@
 
 test/
 yolov5
-deeplab/checkpoints
-deeplab/seg_results
-deeplab/temp
-deeplab/test
+bisenet/checkpoints
+bisenet/seg_results
+bisenet/temp
+bisenet/test
 
 broccoli_data/
 broccoli_data_2021/
 Labelme.exe
 test.ipynb
+
+.vscode
+.ipynb_checkpoints
+*.pyc
