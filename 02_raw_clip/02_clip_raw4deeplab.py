@@ -89,17 +89,20 @@ def select_best(dist_container, strategy="min_dist"):
             
 
 if __name__ == "__main__":
-    todo_pool = ["0520_p", "0522_p", "0525_p", "0526_p", "0528_p"]
+    #todo_pool = ["0520_p", "0522_p", "0525_p", "0526_p", "0528_p"]
+    todo_pool = ["210512", "210514", "210515", "210519", "210520", "210526"]
     
     for tp in todo_pool:
-        p2 = Paths(tp)
+        #p2 = Paths(tp)
+        p2 = Paths(tp, year=2021)
 
         p4d = Pix4D(project_path=p2.pix4d_project, 
                     raw_img_path=p2.raw_img, 
                     project_name=p2.project_name,
                     param_folder=p2.pix4d_param)
 
-        shp_file = r"Y:\hwang_Pro\data\2020_tanashi_broccoli\02_GIS\rotate_grids\split_grid_2.5m.shp"
+        #shp_file = r"Y:\hwang_Pro\data\2020_tanashi_broccoli\02_GIS\rotate_grids\split_grid_2.5m.shp"
+        shp_file = f"{p2.root}/02_GIS/split_grid.shp"
 
         process_area = shp.read_shp3d(shp_file, dsm_path=p4d.dsm_file, geotiff_proj=p4d.dsm_header['proj'], name_field="id", get_z_by="mean")
 
@@ -130,7 +133,10 @@ if __name__ == "__main__":
 
 
         # read broccoli root shp file
-        root = shapefile.Reader(f"{p2.root}/10_locate_by_cv/color_label_0417_mavic/keep_points_manual.shp")
+        
+        #root = shapefile.Reader(f"{p2.root}/10_locate_by_cv/color_label_0417_mavic/keep_points_manual.shp")
+        root = shapefile.Reader(f"{p2.root}/12_locate_by_yolo/sorted_id.shp")
+        
         points_np = np.zeros((0,2))
         for i, point in enumerate(root.shapes()):
             points_np = np.vstack([points_np, np.asarray(point.points)])
