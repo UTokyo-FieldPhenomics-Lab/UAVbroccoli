@@ -15,14 +15,20 @@ if __name__ == "__main__":
                     param_folder=p2.pix4d_param)
 
         #root = shapefile.Reader(f"{p2.root}/10_locate_by_cv/color_label_0417_mavic/keep_points_manual.shp")
-        root = shapefile.Reader(f"{p2.root}/12_locate_by_yolo/sorted_id.shp")
+        #root = shapefile.Reader(f"{p2.root}/12_locate_by_yolo/sorted_id.shp")
         
-        points_np = np.zeros((0,2))
-        for i, point in enumerate(root.shapes()):
-            points_np = np.vstack([points_np, np.asarray(point.points)])
+        #points_np = np.zeros((0,2))
+        #for i, point in enumerate(root.shapes()):
+        #    points_np = np.vstack([points_np, np.asarray(point.points)])
             
-        ht = geotiff.mean_values(p4d.dsm_file)
-        points_np3d = np.insert(points_np, 2, ht, axis=1)
+        #ht = geotiff.mean_values(p4d.dsm_file)
+        #points_np3d = np.insert(points_np, 2, ht, axis=1)
+        
+        
+        points = shp.read_shp3d(f"{p2.root}/12_locate_by_yolo/sorted_id.shp", p4d.dsm_file, get_z_by="max", get_z_buffer=0.2, geo_head=p4d.dsm_header)
+        points_np3d = np.zeros((0,3))
+        for k, p in points.items():
+            points_np3d = np.vstack([points_np3d, p])
         
         deeplab_dict = {}
         for img in p4d.img:
