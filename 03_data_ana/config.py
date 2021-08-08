@@ -6,6 +6,8 @@ user = platform.node()
 
 if user == "DESKTOP-3J8SGRC":
     easyidp_path = "Y:\hwang_Pro\github\EasyIDP"
+elif user == "NERV":
+    easyidp_path = "/mnt/d/OneDrive/Program/GitHub/EasyIDP"
 else:
     raise FileNotFoundError(f"please add new user [{user}] setting in configs.py")
     

@@ -1,6 +1,7 @@
 */.ipynb_checkpoints/*
 */.vscode/*
 */out/*
+*/input/*
 
 */train/*
 */validation/*
