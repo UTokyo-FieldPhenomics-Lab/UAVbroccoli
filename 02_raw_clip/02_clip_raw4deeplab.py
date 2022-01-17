@@ -89,10 +89,11 @@ def select_best(dist_container, strategy="min_dist"):
             
 
 if __name__ == "__main__":
-    todo_pool = ["0520_p", "0522_p", "0525_p", "0526_p", "0528_p"]
+    #todo_pool = ["0518_p", "0520_p", "0522_p", "0525_p", "0526_p", "0528_p"]
+    todo_pool = ["0518_p"]
     #todo_pool = ["210512", "210514", "210515", "210519", "210520", "210526"]
     
-    file = open(r"Y:\hwang_Pro\data\2020_tanashi_broccoli\13_roi_on_raw\run_images.csv", "w")
+    file = open(r"Y:\hwang_Pro\data\2020_tanashi_broccoli\13_roi_on_raw\run_images18.csv", "w")
     #file = open(r"Y:\hwang_Pro\data\2021_tanashi_broccoli\13_roi_on_raw\run_images.csv", "w")
     
     for tp in todo_pool:
