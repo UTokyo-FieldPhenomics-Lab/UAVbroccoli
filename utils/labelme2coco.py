@@ -6,7 +6,7 @@ import requests
 from tqdm import tqdm
 import numpy as np
 
-def labelme2json(json_path, json_list):
+def labelme2json(json_entry):
     
     # setup COCO dataset container and info
     coco = {
@@ -17,9 +17,9 @@ def labelme2json(json_path, json_list):
         'categories': []
     }
 
-    for json_file in json_list:
+    for json_file in json_entry:
             # read labelbox JSON output
-        with open(f'{json_path}/{json_file}', 'r', encoding='utf-8') as f:
+        with open(json_file.path, 'r', encoding='utf-8') as f:
             # lines = f.readlines()
             label_data = json.load(f)
         
@@ -31,6 +31,7 @@ def labelme2json(json_path, json_list):
             # 'url': 'labelbox.com',
             'date_created': dt.datetime.now(dt.timezone.utc).isoformat(),
         }
+        # print(label_data['imagePath'])
         part1 = label_data['imagePath'].split('\\')[-2].split('_')[3]
         part2 = label_data['imagePath'].split('\\')[-1]
         image_name = part1 + '_'+ part2
@@ -88,6 +89,7 @@ def labelme2json(json_path, json_list):
                 }
 
                 coco['annotations'].append(annotation)
+
             
             if object_['shape_type'] == 'rectangle':
                 rectangle = object_['points']

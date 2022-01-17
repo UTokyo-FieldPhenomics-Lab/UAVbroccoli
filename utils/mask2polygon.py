@@ -5,8 +5,9 @@ from skimage.morphology import remove_small_objects, remove_small_holes
 from shapely.geometry import Polygon
 
 def mask2polygon(mask):
-    mask = remove_small_objects(mask==255, min_size=100, connectivity=1)
-    mask = remove_small_holes(mask, area_threshold=100)
+    mask = remove_small_holes(mask==255, area_threshold=100)
+    mask = remove_small_objects(mask, min_size=100, connectivity=1)
+    
     h, _ = mask.shape
     contours = measure.find_contours(mask)
     simplified = []
