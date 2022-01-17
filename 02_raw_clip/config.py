@@ -33,6 +33,8 @@ class Paths():
         
         if year == 2020:
             self.root = r"Y:\hwang_Pro\data\2020_tanashi_broccoli"
+        elif year == 2019:
+            self.root = r"Y:\hwang_Pro\data\2019_tanashi_broccoli5"
         else:
             self.root = r"Y:\hwang_Pro\data\2021_tanashi_broccoli"
         
@@ -41,6 +43,9 @@ class Paths():
         self.raw_img =f"{self.root}/00_rgb_raw/{self.project_name}"
         if year == 2020:
             self.pix4d_project = f"{self.root}/01_tanashi_broccoli2020_RGB_AP/{self.project_name}"
+            self.pix4d_param = f"{self.pix4d_project}/params"
+        elif year == 2019:
+            self.pix4d_project = f"{self.root}/01_pix4d_projects/{self.project_name}"
             self.pix4d_param = f"{self.pix4d_project}/params"
         else:
             self.pix4d_project = f"{self.root}/01_pix4d_projects/{self.project_name}"
@@ -90,6 +95,17 @@ class Paths():
                     "210519"  :"broccoli_tanashi_5_20210519_P4RTK_15m_M_abefore",
                     "210520"  :"broccoli_tanashi_5_20210520_P4RTK_15m_M_abefore",
                     "210526"  :"broccoli_tanashi_5_20210526_P4RTK_15m_M",
+                    # ============== 2019 ==============
+                    "191001"  :"broccoli_tanashi_5_20191001_mavicRGB_15m",
+                    "191006"  :"broccoli_tanashi_5_20191006_mavicRGB_15m_wind_M",
+                    "191008"  :"broccoli_tanashi_5_20191008_mavicRGB_15m_M",
+                    "191023"  :"broccoli_tanashi_5_20191023_mavicRGB_15m_M_2",
+                    "191106"  :"broccoli_tanashi_5_20191106_mavicRGB_15m_M_2",
+                    #"191129"  :"broccoli_tanashi_5_20191129_mavicRGB_15m_after",
+                    "191129"  :"broccoli_tanashi_5_20191129_mavicRGB_15m_before",
+                    #"191210"  :"broccoli_tanashi_5_20191210_mavicRGB_15m_after",
+                    #"191210"  :"broccoli_tanashi_5_20191210_mavicRGB_15m_before",
+                    "191210"  :"broccoli_tanashi_5_20191210_mavicRGB_15m_before_2",
                    }
         
         if key in all_date.values():

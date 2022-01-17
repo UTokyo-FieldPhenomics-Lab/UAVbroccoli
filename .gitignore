@@ -1,6 +1,7 @@
 */.ipynb_checkpoints/*
 */.vscode/*
 */out/*
+*/input/*
 
 */train/*
 */validation/*
@@ -21,3 +22,5 @@ test.ipynb
 .vscode
 .ipynb_checkpoints
 *.pyc
+03_data_ana/label_check/*
+02_raw_clip/*.png

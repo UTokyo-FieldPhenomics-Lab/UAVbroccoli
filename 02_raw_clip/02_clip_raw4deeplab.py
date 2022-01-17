@@ -1,7 +1,7 @@
 from config import *
 from PIL import Image
 from easyric.io.json import dict2json
-
+import json
 
 ###############  
 # 01_clip_raw #
@@ -89,37 +89,71 @@ def select_best(dist_container, strategy="min_dist"):
             
 
 if __name__ == "__main__":
-    #todo_pool = ["0520_p", "0522_p", "0525_p", "0526_p", "0528_p"]
-    todo_pool = ["210512", "210514", "210515", "210519", "210520", "210526"]
+    #todo_pool = ["0518_p", "0520_p", "0522_p", "0525_p", "0526_p", "0528_p"]
+    todo_pool = ["0518_p"]
+    #todo_pool = ["210512", "210514", "210515", "210519", "210520", "210526"]
+    
+    file = open(r"Y:\hwang_Pro\data\2020_tanashi_broccoli\13_roi_on_raw\run_images18.csv", "w")
+    #file = open(r"Y:\hwang_Pro\data\2021_tanashi_broccoli\13_roi_on_raw\run_images.csv", "w")
     
     for tp in todo_pool:
-        #p2 = Paths(tp)
-        p2 = Paths(tp, year=2021)
+        p2 = Paths(tp)
+        #p2 = Paths(tp, year=2021)
 
         p4d = Pix4D(project_path=p2.pix4d_project, 
                     raw_img_path=p2.raw_img, 
                     project_name=p2.project_name,
                     param_folder=p2.pix4d_param)
 
-        #shp_file = r"Y:\hwang_Pro\data\2020_tanashi_broccoli\02_GIS\rotate_grids\split_grid_2.5m.shp"
-        shp_file = f"{p2.root}/02_GIS/split_grid.shp"
-
-        process_area = shp.read_shp3d(shp_file, dsm_path=p4d.dsm_file, geotiff_proj=p4d.dsm_header['proj'], name_field="id", get_z_by="mean")
+        shp_file = r"Y:\hwang_Pro\data\2020_tanashi_broccoli\02_GIS\rotate_grids\split_grid_2.5m.shp"
+        #shp_file = f"{p2.root}/02_GIS/split_grid.shp"
+        
+        cache_file = f"{p2.root}/13_roi_on_raw/__cache__/{p2.project_name}_geo3d.json"
+        if os.path.exists(cache_file):
+            process_area = {}
+            with open(cache_file, "r", encoding="utf-8") as f:
+                js = json.loads(f.read())
+                for item, values in js.items():
+                    process_area[item] = np.array(values)
+            print("process_area loaded")
+        else:
+            process_area = shp.read_shp3d(shp_file, dsm_path=p4d.dsm_file, geotiff_proj=p4d.dsm_header['proj'], name_field="id", get_z_by="max")
+            dict2json(process_area, cache_file)
 
         # calculate clipped raw image sectors
-        result_container = pd.DataFrame(columns=['id', 'image', 'xc', 'yc', 'dist', 'angle', 
-                                              "select", 'roi'])
+        #result_container = pd.DataFrame(columns=['id', 'image', 'xc', 'yc', 'dist', 'angle', 
+        #                                         "select", 'roi'])
+        result_container = pd.DataFrame(columns=['id', 'image', 'xc', 'yc', "select", 'roi'])
 
         for plot_id, roi in process_area.items():
             img_dict = geo2raw.get_img_coords_dict(p4d, roi-p4d.offset.np, method="pmat")
+            
+            #img_dict_sort = geo2raw.filter_cloest_img(p4d, img_dict, roi, 3)
+            img_dict_sort = geo2raw.filter_cloest_img(p4d, img_dict, roi, 1)
 
-            reverse_dist = calculate_dist2center(p4d, img_dict, id_name=plot_id)
+            #reverse_dist = calculate_dist2center(p4d, img_dict, id_name=plot_id)
 
             # filter 3 closest raw images
-            selected_idx = reverse_dist.copy().sort_values(by=['dist'], axis=0, ascending=True).index[0:3]
-            reverse_dist.loc[selected_idx, 'select'] = True
+            #selected_idx = reverse_dist.copy().sort_values(by=['dist'], axis=0, ascending=True).index[0:3]
+            #reverse_dist.loc[selected_idx, 'select'] = True
 
-            result_container = pd.concat([result_container, reverse_dist])
+            #result_container = pd.concat([result_container, reverse_dist])
+            
+            for i, c in img_dict.items():
+                c = np.asarray(c)
+                xmin, ymin = c.min(axis=0)
+                xmax, ymax = c.max(axis=0)
+                roi_w = xmax - xmin
+                roi_h = ymax - ymin
+                x0 = (xmax+xmin)/2
+                y0 = (ymax+ymin)/2
+                
+                if i in img_dict_sort.keys():
+                    select = True
+                else:
+                    select = False
+                
+                result_container.loc[len(result_container)] = {"id":plot_id, "image":i, "xc":x0, "yc":y0, "roi":c, "select":select}
 
         result_container['offset_x'] = round(result_container.xc - 750).astype(np.int32)
         result_container['offset_y'] = round(result_container.yc - 750).astype(np.int32)
@@ -134,19 +168,31 @@ if __name__ == "__main__":
 
         # read broccoli root shp file
         
-        #root = shapefile.Reader(f"{p2.root}/10_locate_by_cv/color_label_0417_mavic/keep_points_manual.shp")
-        root = shapefile.Reader(f"{p2.root}/12_locate_by_yolo/sorted_id.shp")
+        root = f"{p2.root}/10_locate_by_cv/color_label_0417_mavic/keep_points_manual.shp"
+        #root = f"{p2.root}/12_locate_by_yolo/sorted_id.shp"
         
-        points_np = np.zeros((0,2))
-        for i, point in enumerate(root.shapes()):
-            points_np = np.vstack([points_np, np.asarray(point.points)])
-
+        #points_np = np.zeros((0,2))
+        #for i, point in enumerate(root.shapes()):
+        #    points_np = np.vstack([points_np, np.asarray(point.points)])
+        
+        cache_file_p = f"{p2.root}/13_roi_on_raw/__cache__/{p2.project_name}_points_np3d.csv"
+        if os.path.exists(cache_file_p):
+            points_np3d = np.genfromtxt(cache_file_p, delimiter=',')
+            print("points_np3d loaded")
+        else:
+            points = shp.read_shp3d(root, p4d.dsm_file, get_z_by="max", get_z_buffer=0.2, geo_head=p4d.dsm_header)
+            points_np3d = np.zeros((0,3))
+            for k, p in points.items():
+                points_np3d = np.vstack([points_np3d, p])
+                
+            np.savetxt(cache_file_p, points_np3d, delimiter=",")
+        
         deeplab_dict = {}
         for idx, row in result_container[result_container.select].iterrows():
-            original = Image.open(p4d.img[row.image].path)
-            cropped = original.crop([row.offset_x, row.offset_y, row.offset_x+1500, row.offset_y+1500])
+            #original = Image.open(p4d.img[row.image].path)
+            #cropped = original.crop([row.offset_x, row.offset_y, row.offset_x+1500, row.offset_y+1500])
 
-            points_np3d = np.insert(points_np, 2, process_area[row.id][0,2], axis=1)
+            #points_np3d = np.insert(points_np, 2, process_area[row.id][0,2], axis=1)
             points_raw = geo2raw.pmatrix_calc(p4d, points_np3d-p4d.offset.np, row.image, distort_correct=True)
 
             points_left = points_raw[(points_raw[:,0] > row.offset_x) & (points_raw[:,0] < row.offset_x+1500) & 
@@ -160,6 +206,7 @@ if __name__ == "__main__":
             deeplab_dict[img_name] = {"imagePath": f"./{p2.project_name}/{img_name}",
                                       "points": points_left_offset.tolist()}
 
-            cropped.save(f"{csv_folder}/{row.id}_{row.image}")
+            #cropped.save(f"{csv_folder}/{row.id}_{row.image}")
+            file.write(f"{csv_folder}/{row.id}_{row.image},\n")
 
         dict2json(deeplab_dict, f"{p2.root}/13_roi_on_raw/{p2.project_name}.json")
