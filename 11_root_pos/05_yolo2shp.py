@@ -157,3 +157,5 @@ if __name__ == '__main__':
     bbox_dom_in["y_geo"] = bbox_dom_in["yc_geo"]
 
     save_shp(bbox_dom_in, kp_pts_path, type='points')
+
+    print("Shapefile results saved!")

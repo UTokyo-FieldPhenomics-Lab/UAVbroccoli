@@ -83,3 +83,5 @@ for k, dp in labelme_json_data_pool.items():
             yolo_data,
             fmt=["%d", "%f", "%f", "%f", "%f"]
         )
+
+print("Training database successfully prepared")

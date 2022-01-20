@@ -120,15 +120,15 @@ peak_x = v[peaks]
 buffer = peak_x[1:] - peak_x[:-1]
 buffer = np.hstack([max(buffer), buffer, max(buffer)])
 
-order_df = pd.DataFrame({"x_geo": center_points_np[:,0], 
-                         "y_geo": center_points_np[:,1],
-                         "cvt_x": cvt_xy[:,0],
-                         "cvt_y": cvt_xy[:,1],
-                         "fid": -1})
-
 check_ransac_onoff = True
 
 while check_ransac_onoff:
+    order_df = pd.DataFrame({"x_geo": center_points_np[:,0], 
+                             "y_geo": center_points_np[:,1],
+                             "cvt_x": cvt_xy[:,0],
+                             "cvt_y": cvt_xy[:,1],
+                             "fid": -1})
+
     fid_st = 1
 
     ## draw figure & rename in the same loop
@@ -143,12 +143,17 @@ while check_ransac_onoff:
         
         selected = (order_df.cvt_x >= range_st ) & (order_df.cvt_x <= range_ed)
         selected_xy = order_df.loc[selected, ['cvt_x', 'cvt_y']]
-        
-        X = np.ones((len(selected_xy), 2))
-        X[:, 1] = selected_xy.cvt_x
 
-        reg = RANSACRegressor(residual_threshold=ransac_residual_threshold, max_trials=ransac_max_trials).fit(X, selected_xy['cvt_y'])
-        inlier_mask = reg.inlier_mask_
+        if use_ransac:
+            # here flip x and y, because vertical line residual is very high
+            # > residual = base_estimator.predict(X) - y
+            Y = np.ones((len(selected_xy), 1))
+            Y[:, 0] = selected_xy.cvt_y
+
+            reg = RANSACRegressor(residual_threshold=50, max_trials=1000).fit(Y, selected_xy['cvt_x'])
+            inlier_mask = reg.inlier_mask_
+        else:
+            inlier_mask = np.ones(len(selected_xy)).astype(bool)
         
         # remove outlier and sort by Y axis
         selected_xy_sort = selected_xy.loc[inlier_mask,:].sort_values(by=['cvt_y'], ascending=False)
@@ -165,8 +170,17 @@ while check_ransac_onoff:
 
         fid_st += len(selected_xy_sort)
 
-    ax.set_title(f"Regressed by RANSAC, residual_threshold={ransac_residual_threshold}, max_trails={ransac_max_trials}")
-    ax.set_xlabel("Note: dots with black boundary will be removed as noises")
+    fid_positive = order_df[order_df.fid > 0]
+    fid_negative = order_df[order_df.fid < 0]
+    total_num = len(order_df)
+    marked_num = len(fid_positive)
+    ignored_num = len(fid_negative)
+    
+    if use_ransac:
+        ax.set_title(f"Based on ridge buffer={ridge_buffer}, Regressed by RANSAC, nresidual_threshold={ransac_residual_threshold}, max_trails={ransac_max_trials}")
+    else:
+        ax.set_title(f"Regressed by simple ridge buffer={ridge_buffer}")
+    ax.set_xlabel(f"Note: {ignored_num} dots with black boundary are not labeled ({marked_num}/{total_num})")
     ax.set_xticks([])
     ax.set_yticks([])
     
@@ -175,7 +189,7 @@ while check_ransac_onoff:
     plt.show()
 
     # check if ridges are correctly detected
-    ans = input("Is all the ridges colors are correct?[Y/N]\n>>> ")
+    ans = input(f"Is all the ridges colors are correct? {marked_num} of {total_num} re-labeled, {ignored_num} ignored[Y/N]\n>>> ")
 
     plt.close(fig)
 
@@ -185,22 +199,54 @@ while check_ransac_onoff:
         ask_str = \
 f"""
 Please type parameter NUMBER want adjust:
-[1] RANSAC residual threshold = {ransac_residual_threshold}
-[2] RANSAC max trails = {ransac_max_trials}
+[1] Ridge buffer = {ridge_buffer}
+[2] Use RANSAC = {use_ransac}
+[3] RANSAC residual threshold = {ransac_residual_threshold}
+[4] RANSAC max trails = {ransac_max_trials}
 >>> """
         selection_onoff = True
         while selection_onoff:
             selection = int(input(ask_str))
-            if selection in [1,2]:
+            if selection in [1,2,3, 4]:
                 selection_onoff = False
 
         change_value = input(f"Change to?\n>>> ")
-
         if selection == 1:
-            ransac_residual_threshold = int(change_value)
+            if float(change_value) >= 0.8 or float(change_value) <= 0:
+                print("0 < Ridge buffer < 0.8")
+                continue
+            else:
+                ridge_buffer = float(change_value)
         elif selection == 2:
-            ransac_max_trials = int(ransac_max_trials)
+            if change_value in ["0", "f", "F", "False", "false"]:
+                use_ransac = False
+            else:
+                use_ransac = True
+        elif selection == 3:
+            ransac_residual_threshold = int(change_value)
+        elif selection == 4:
+            ransac_max_trials = int(change_value)
 
 # save results to shp file
-fid_positive = order_df[order_df.fid > 0]
-save_shp(fid_positive, f"{shapefile_save_folder}/ordered_center_points", type='points')
+selection_onoff = True
+if ignored_num == 0:
+    save_shp(order_df, f"{shapefile_save_folder}/ordered_center_points", type='points')
+    selection_onoff = False
+
+while selection_onoff:
+    ans = input(f"Successfully labeled {marked_num} in {total_num}, for {ignored_num} non-labeled points\n[1] give continues id\n[2] set id = -1\n[3] remove these points\n>>> ")
+    if ans == '1':
+        selection_onoff = False
+        fid = np.linspace(fid_st, ignored_num+fid_st-1, num=ignored_num).astype(int)
+        fid_negative['fid'] = fid
+        order_df.loc[fid_negative.index, 'fid'] = fid_negative.fid
+        save_shp(order_df, f"{shapefile_save_folder}/ordered_center_points", type='points')
+    elif ans == '2':
+        selection_onoff = False
+        save_shp(order_df, f"{shapefile_save_folder}/ordered_center_points", type='points')
+    elif ans == '3':
+        selection_onoff = False
+        save_shp(fid_positive, f"{shapefile_save_folder}/ordered_center_points", type='points')
+    else:
+        print(f"Please type 1, 2, 3, not [{ans}]")
+    
