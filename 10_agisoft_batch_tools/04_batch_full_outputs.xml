@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<batchjobs version="1.8.0" save_project="true">
+  <job name="BuildDenseCloud" target="unprocessed">
+    <downscale>2</downscale>
+    <reuse_depth>true</reuse_depth>
+  </job>
+  <job name="BuildModel" target="unprocessed">
+    <reuse_depth>true</reuse_depth>
+  </job>
+  <job name="BuildDem" target="unprocessed">
+    <downscale>2</downscale>
+    <reuse_depth>true</reuse_depth>
+  </job>
+  <job name="BuildOrthomosaic" target="unprocessed"/>
+  <job name="ExportPoints" target="unprocessed">
+    <crs>PROJCS["WGS 84 / UTM zone 54N",GEOGCS["WGS 84",DATUM["World Geodetic System 1984 ensemble",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9102"]],AUTHORITY["EPSG","4326"]],PROJECTION["Transverse_Mercator",AUTHORITY["EPSG","9807"]],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",141],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AUTHORITY["EPSG","32654"]]</crs>
+    <format>12</format>
+    <path>{projectfolder}/outputs/broccoli_tanashi_5_{chunklabel}.laz</path>
+    <save_confidence>false</save_confidence>
+    <save_normals>false</save_normals>
+  </job>
+  <job name="ExportDem" target="unprocessed">
+    <image_format>2</image_format>
+    <path>{projectfolder}/outputs/broccoli_tanashi_5_{chunklabel}_dsm.tif</path>
+    <projection>
+      <crs>PROJCS["WGS 84 / UTM zone 54N",GEOGCS["WGS 84",DATUM["World Geodetic System 1984 ensemble",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9102"]],AUTHORITY["EPSG","4326"]],PROJECTION["Transverse_Mercator",AUTHORITY["EPSG","9807"]],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",141],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AUTHORITY["EPSG","32654"]]</crs>
+      <transform>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</transform>
+      <surface>0</surface>
+      <radius>1</radius>
+    </projection>
+    <source_data>4</source_data>
+  </job>
+  <job name="ExportOrthomosaic" target="unprocessed">
+    <image_format>2</image_format>
+    <path>{projectfolder}/outputs/broccoli_tanashi_5_{chunklabel}_dom.tif</path>
+    <projection>
+      <crs>PROJCS["WGS 84 / UTM zone 54N",GEOGCS["WGS 84",DATUM["World Geodetic System 1984 ensemble",SPHEROID["WGS 84",6378137,298.257223563,AUTHORITY["EPSG","7030"]],TOWGS84[0,0,0,0,0,0,0],AUTHORITY["EPSG","6326"]],PRIMEM["Greenwich",0,AUTHORITY["EPSG","8901"]],UNIT["degree",0.01745329251994328,AUTHORITY["EPSG","9102"]],AUTHORITY["EPSG","4326"]],PROJECTION["Transverse_Mercator",AUTHORITY["EPSG","9807"]],PARAMETER["latitude_of_origin",0],PARAMETER["central_meridian",141],PARAMETER["scale_factor",0.9996],PARAMETER["false_easting",500000],PARAMETER["false_northing",0],UNIT["metre",1,AUTHORITY["EPSG","9001"]],AUTHORITY["EPSG","32654"]]</crs>
+      <transform>1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1</transform>
+      <surface>0</surface>
+      <radius>1</radius>
+    </projection>
+  </job>
+</batchjobs>

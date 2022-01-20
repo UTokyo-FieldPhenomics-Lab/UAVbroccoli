@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<batchjobs version="1.8.0">
+  <job name="AlignPhotos" target="all">
+    <adaptive_fitting>true</adaptive_fitting>
+    <downscale>0</downscale>
+    <filter_stationary_points>false</filter_stationary_points>
+    <generic_preselection>false</generic_preselection>
+    <mask_tiepoints>false</mask_tiepoints>
+  </job>
+</batchjobs>
