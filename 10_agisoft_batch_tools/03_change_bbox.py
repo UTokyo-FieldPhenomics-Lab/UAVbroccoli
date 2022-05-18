@@ -1,13 +1,12 @@
 import Metashape
 import pickle
 import os
+from config import *
 
 doc = Metashape.app.document
 
-pkl_path = r"E:\2022_tanashi_broccoli\01_metashape_projects\bbox.pkl"
-
-if os.path.exists(pkl_path):
-    with open(pkl_path, "rb") as handle:
+if os.path.exists(bbox_pkl_path):
+    with open(bbox_pkl_path, "rb") as handle:
         t, r, c, s = pickle.load(handle)
 
         T0 = Metashape.Matrix([[t[0], t[1], t[2], t[3]], 
@@ -27,7 +26,7 @@ else:
         R0 = region.rot
         C0 = region.center
         S0 = region.size
-        with open(pkl_path, "wb") as handle:
+        with open(bbox_pkl_path, "wb") as handle:
             pickle.dump([list(T0), list(R0), list(C0), list(S0)], handle, protocol=pickle.HIGHEST_PROTOCOL)
     else:
         print(chunk.label)

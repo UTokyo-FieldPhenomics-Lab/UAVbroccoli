@@ -2,11 +2,9 @@
 # please create metashape project first
 import os
 import Metashape
+from config import *
 
-img_path = "E:/2022_tanashi_broccoli/00_rgb_raw"
 flight_folder = os.listdir(img_path)
-
-skip_flight = ['20211021_0']
 
 doc = Metashape.app.document
 
@@ -60,7 +58,7 @@ for flight in flight_folder:
 
     # add gcp
     print(f"<--------- Adding GCP coordinates --------->")
-    chunk.importReference("E:/2022_tanashi_broccoli/02_GIS/gcp.csv", 
+    chunk.importReference(ref_csv, 
                           format=Metashape.ReferenceFormat(3), 
                           columns="nxyz", delimiter=",", create_markers=True)
 
