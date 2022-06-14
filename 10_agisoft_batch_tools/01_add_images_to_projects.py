@@ -16,9 +16,11 @@ for flight in flight_folder:
     chunk_name_list = [c.label for c in doc.chunks]
 
     # this need update with _after and _abefore when destructive sampling
-    flight_date = flight.split('_')[3]
-    flight_prefix = "_0"
-    chunk_name = flight_date + flight_prefix
+    # flight_date = flight.split('_')[3]
+    # flight_prefix = "_0"
+    # chunk_name = flight_date + flight_prefix
+    # make chunk name as same as folder name of raw image
+    chunk_name = flight
 
     # examine if already exists:
     if chunk_name in chunk_name_list:
