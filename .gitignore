@@ -24,3 +24,6 @@ test.ipynb
 *.pyc
 03_data_ana/label_check/*
 02_raw_clip/*.png
+
+10_agisoft_batch_tools/test/*
+10_agisoft_batch_tools/config_test.json

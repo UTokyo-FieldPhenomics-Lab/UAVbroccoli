@@ -1,0 +1,7 @@
+{
+    "img_path": "E:/2022_tanashi_broccoli/00_rgb_raw",
+    "skip_folder": ["broccoli_tanashi_5_20211021_P4RTK_15m", "broccoli_tanashi_5_20220215_P4RTK_15m", "broccoli_tanashi_5_20220221_P4RTK_15m"],
+    "ref_csv": "E:/2022_tanashi_broccoli/02_GIS/gcp.csv",
+    
+    "bbox_pkl_path": "E:\\2022_tanashi_broccoli\\01_metashape_projects\\bbox.pkl"
+}

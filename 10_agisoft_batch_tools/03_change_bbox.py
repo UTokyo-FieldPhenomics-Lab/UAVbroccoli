@@ -1,12 +1,14 @@
 import Metashape
 import pickle
 import os
-from config import *
+from utils import Config
+
+config = Config(json_path=os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json"))
 
 doc = Metashape.app.document
 
-if os.path.exists(bbox_pkl_path):
-    with open(bbox_pkl_path, "rb") as handle:
+if os.path.exists(config.bbox_pkl_path):
+    with open(config.bbox_pkl_path, "rb") as handle:
         t, r, c, s = pickle.load(handle)
 
         T0 = Metashape.Matrix([[t[0], t[1], t[2], t[3]], 
@@ -18,18 +20,17 @@ if os.path.exists(bbox_pkl_path):
         S0 = Metashape.Vector([s[0], s[1], s[2]])
 
 else:
-    # read chunk 211101
-    chunk = doc.chunks[2]
-    if chunk.label == "20211101_0":
-        T0 = chunk.transform.matrix
-        region = chunk.region
-        R0 = region.rot
-        C0 = region.center
-        S0 = region.size
-        with open(bbox_pkl_path, "wb") as handle:
-            pickle.dump([list(T0), list(R0), list(C0), list(S0)], handle, protocol=pickle.HIGHEST_PROTOCOL)
-    else:
-        print(chunk.label)
+    chunk = doc.chunks[0]
+
+    T0 = chunk.transform.matrix
+    region = chunk.region
+    R0 = region.rot
+    C0 = region.center
+    S0 = region.size
+    with open(config.bbox_pkl_path, "wb") as handle:
+        pickle.dump([list(T0), list(R0), list(C0), list(S0)], handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    print(f"use [{chunk.label}] as reference bbox, and save to [{config.bbox_pkl_path}]")
 
 
 for chunk in doc.chunks:

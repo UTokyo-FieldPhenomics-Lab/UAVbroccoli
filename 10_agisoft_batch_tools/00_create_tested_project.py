@@ -2,9 +2,11 @@
 # please create metashape project first
 import os
 import Metashape
-from config import *
+from utils import Config
 
-flight_folder = os.listdir(img_path)
+config = Config(json_path=os.path.join(os.path.dirname(os.path.realpath(__file__)), "config.json"))
+
+flight_folder = os.listdir(config.img_path)
 
 doc = Metashape.app.document
 
@@ -25,7 +27,7 @@ for flight in flight_folder:
         print(f"[{chunk_name}] already exists")
         continue
 
-    if chunk_name in skip_flight:
+    if chunk_name in config.skip_folder:
         print(f"[{chunk_name}] in skip flights")
         continue
 
@@ -38,10 +40,10 @@ for flight in flight_folder:
     print(f"<--------- Adding images --------->")
     ## filter images
     img_list = []
-    all_subfile = os.listdir(os.path.join(img_path, flight))
+    all_subfile = os.listdir(os.path.join(config.img_path, flight))
     for s in all_subfile:
         if s.endswith('.JPG'):
-            img_list.append(os.path.join(img_path, flight, s))
+            img_list.append(os.path.join(config.img_path, flight, s))
 
     chunk.addPhotos(img_list)
 
@@ -58,7 +60,7 @@ for flight in flight_folder:
 
     # add gcp
     print(f"<--------- Adding GCP coordinates --------->")
-    chunk.importReference(ref_csv, 
+    chunk.importReference(config.ref_csv, 
                           format=Metashape.ReferenceFormat(3), 
                           columns="nxyz", delimiter=",", create_markers=True)
 
