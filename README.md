@@ -13,7 +13,7 @@ The folder structure of this project:
 2. `10_agisoft_batch_tools` is the batch processing code for **Metashape 3D reconstruction**
 3. `11_root_pos` and `yolov5` are the code for **root position detection**
 4. `12_head_seg` and `bisenet` are the code for **broccoli head segmentation** (**not finished yet**)
-5. `easyidp` is the code for field map backward projection, while `utils` is the code for image label conversion in previous deep learning steps.
+5. `EasyIDP` is the code for field map backward projection, while `utils` is the code for image label conversion in previous deep learning steps.
 
 PS: the `yolov5`, `bisenet`, and `easyidp` are submodules for other open source project, after downloading the project, you can download them via git command
 
@@ -26,9 +26,9 @@ git submodule update
 
 Please using RTK UAV and automate flight route plan software to control drones to ensure enough overlapping and image quality. Also, please set auto-detectable ground control point board (recommend 75cm x 75 cm for 15m flight) in the field:
 
-| 16bit coded target      | How to get them                                     |
-| ----------------------- | --------------------------------------------------- |
-| ![image.png](assets/image-20220115140256-1el73jh.png "16bit coded target") | ![image.png](assets/image-20220120155355-33kjop8.png)|
+| 16bit coded target                                                    | How to get them                                     |
+| --------------------------------------------------------------------- | --------------------------------------------------- |
+| ![image.png](assets/image-20220115140256-1el73jh.png "16bit coded target") | ![image.png](assets/image-20220120155355-33kjop8.png) |
 
 After collection the images, please organize the data folder as follows:
 
