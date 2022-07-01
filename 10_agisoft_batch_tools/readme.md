@@ -110,6 +110,13 @@ Please follow these steps:
 
    ![img](../assets/Snipaste_2022-06-15_20-33-39.png)
 
+   > If you meet the error `can not load the script`, please either update your metashape version (Recommended), or edit the xml file:
+   > ```xml
+   > <?xml version="1.0" encoding="UTF-8"?>
+   >   <batchjobs version="1.8.0">  // edit here to match
+   > ...
+   > ```
+
    Then you the target_x are also appears in the software:
 
    ![img](../assets/Snipaste_2022-06-15_20-46-06.png)
