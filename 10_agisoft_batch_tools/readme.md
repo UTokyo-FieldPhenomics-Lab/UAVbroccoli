@@ -24,7 +24,7 @@ Link: `your/data/root/path`
 │   ├── broccoli.psx
 │   └── outputs
 └── 02_GIS
-    └── gcp.csv
+    └── gcp.csv (also can be any name you want)
 ```
 
 # Step 1: Test project
@@ -99,7 +99,7 @@ Please follow these steps:
 
    ![img](../assets/Snipaste_2022-06-15_20-25-35.png)
 
-   No worry about it, we will display it later.
+   No worry about it, we will display it later. (01 will solve this double detecting problem)
 5. Edit the flight height of all the chunks
 
    ![img](../assets/Snipaste_2022-06-15_20-54-34.png)
@@ -121,7 +121,7 @@ Please follow these steps:
 
    ![img](../assets/Snipaste_2022-06-15_20-46-06.png)
 
-   Please edit the `gcp.csv` according to the previous relationship,
+   Please edit the `gcp.csv` according to the previous relationship, eg: taget43<-> 3, then change 3 to 43.
 
    ![img](../assets/Snipaste_2022-06-15_20-47-35.png)
 7. Finally, change the plot bounding box to a proper size
