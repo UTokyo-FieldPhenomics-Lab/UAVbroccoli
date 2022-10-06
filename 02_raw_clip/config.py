@@ -6,6 +6,10 @@ user = platform.node()
 
 if user == "DESKTOP-3J8SGRC":
     easyidp_path = "Y:\hwang_Pro\github\EasyIDP"
+    disk_root = "Y:\hwang_Pro\data"
+elif user == "RTX3090AMD":
+    easyidp_path = r"E:\hwang_jupyter\06_broccoli.paper\EasyIDP"
+    disk_root = r"Z:\hwang_Pro\data"
 else:
     raise FileNotFoundError(f"please add new user [{user}] setting in configs.py")
     
@@ -32,11 +36,11 @@ class Paths():
     def __init__(self, key, year=2020):
         
         if year == 2020:
-            self.root = r"Y:\hwang_Pro\data\2020_tanashi_broccoli"
+            self.root = f"{disk_root}\\2020_tanashi_broccoli"
         elif year == 2019:
-            self.root = r"Y:\hwang_Pro\data\2019_tanashi_broccoli5"
+            self.root = f"{disk_root}\\2019_tanashi_broccoli5"
         else:
-            self.root = r"Y:\hwang_Pro\data\2021_tanashi_broccoli"
+            self.root = f"{disk_root}\\2021_tanashi_broccoli"
         
         self.project_name = self.generate_name(key)
         
