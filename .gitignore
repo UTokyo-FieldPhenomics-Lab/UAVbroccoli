@@ -2,6 +2,8 @@
 */.vscode/*
 */out/*
 */input/*
+.DS_Store
+
 
 */train/*
 */validation/*
