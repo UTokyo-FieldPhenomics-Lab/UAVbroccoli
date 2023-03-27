@@ -3,4 +3,4 @@
 	url = https://github.com/ultralytics/yolov5.git
 [submodule "EasyIDP"]
 	path = EasyIDP
-	url = https://github.com/UTokyo-FieldPhenomics-Lab/EasyIDP
+	url = https://github.com/UTokyo-FieldPhenomics-Lab/EasyIDP.git
