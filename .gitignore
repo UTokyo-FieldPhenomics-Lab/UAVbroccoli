@@ -10,7 +10,6 @@
 */__pycache__/*
 
 test/
-yolov5
 bisenet/checkpoints
 bisenet/seg_results
 bisenet/temp
