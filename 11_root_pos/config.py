@@ -1,7 +1,6 @@
 ###########
 # 00 init #
 ###########
-easyidp_package_path = "Z:/hwang_Pro/github/EasyIDP"
 project_data_folder = "E:/2022_tanashi_broccoli"
 working_spacename = "11_root_position"
 
@@ -86,8 +85,6 @@ ransac_max_trials=2000
 # save files
 figure_save_path = shapefile_save_folder
 
-import sys
-sys.path.insert(0, easyidp_package_path)
 from easyric.caas_lite import TiffSpliter
 from easyric.objects import Pix4D
 from easyric.io import shp, geotiff, plot
