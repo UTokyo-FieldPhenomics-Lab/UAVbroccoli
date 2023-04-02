@@ -6,7 +6,7 @@ import platform
 if not os.path.exists(yolo_model_save_path):
     os.makedirs(yolo_model_save_path)
 
-scripts = f"python ../yolov5/train.py \
+scripts = f"python ./yolov5/train.py \
 --img {yolo_model_image_size} \
 --batch {yolo_model_batch_size} \
 --epochs {yolo_model_epochs} \

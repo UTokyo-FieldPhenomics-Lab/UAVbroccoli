@@ -50,7 +50,9 @@ process_date = {
     },
 }
 
-
+##############################
+# init package and functions #
+##############################
 
 import numpy as np
 import easyidp as idp

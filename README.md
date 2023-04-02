@@ -15,11 +15,29 @@ The folder structure of this project:
 4. `12_head_seg` and `bisenet` are the code for **broccoli head segmentation** (**not finished yet**)
 5. `EasyIDP` is the code for field map backward projection, while `utils` is the code for image label conversion in previous deep learning steps.
 
-PS: the `yolov5`, `bisenet`, and `easyidp` are submodules for other open source project, after downloading the project, you can download them via git command
+## Step 0: Setup enviroments
+
+Recommend to use `conda` to manage and install this project.
+
+> Please using Admin command to run the following code:
 
 ```bash
-git submodule init
-git submodule update
+C:\Users\UserName> conda env create -n uavbroccoli -f "path/to/this/project/conda_requirements.yml"
+...# after successful install
+C:\Users\UserName> conda activate uavbroccoli
+(uavbroccoli) C:\Users\UserName> 
+```
+
+If you using Admin also meet the premission problem, please update Conda to the latest version:
+
+```bash
+C:\Users\UserName> conda update -n base -c defaults conda
+```
+
+Or you can using `pip` as alternative:
+
+```bash
+(your_virtual_env) C:\Users\UserName> pip install -r requirements.txt
 ```
 
 ## Step 1: Collect UAV data

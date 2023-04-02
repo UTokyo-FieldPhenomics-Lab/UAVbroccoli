@@ -11,7 +11,7 @@ dom_name = os.path.split(dom_path_for_detection)[1]
 clip_folder = os.path.join(dom_slice_save_folder, dom_slice_save_format, dom_name)
 # -> 10_root_posotion/jpg/broccoli_tanashi_dom.tif/
 
-scripts = f"python ../yolov5/detect.py \
+scripts = f"python ./yolov5/detect.py \
 --source {clip_folder} \
 --weights {yolo_apply_weights_path} \
 --imgsz {yolo_model_image_size} \
