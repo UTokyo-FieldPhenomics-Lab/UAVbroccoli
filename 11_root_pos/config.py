@@ -35,7 +35,7 @@ train_database_name = "broccoli_root"
 yolo_model_image_size = 1500  # optional
 yolo_model_batch_size = 8
 yolo_model_epochs = 300
-yolo_model_structure_config = "../yolov5/models/yolov5s.yaml"
+yolo_model_structure_config = "./yolov5/models/yolov5s.yaml"
 yolo_model_name = "br"
 yolo_model_save_path = f"{project_data_folder}/{working_spacename}/yolo_train/runs"
 
@@ -84,6 +84,11 @@ ransac_max_trials=2000
 
 # save files
 figure_save_path = shapefile_save_folder
+
+
+##############################
+# init package and functions #
+##############################
 
 from easyric.caas_lite import TiffSpliter
 from easyric.objects import Pix4D
