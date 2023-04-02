@@ -19,25 +19,16 @@ The folder structure of this project:
 
 Recommend to use `conda` to manage and install this project.
 
-> Please using Admin command to run the following code:
-
 ```bash
-C:\Users\UserName> conda env create -n uavbroccoli -f "path/to/this/project/conda_requirements.yml"
+conda env create -n uavbroccoli -f "path/to/this/project/conda_requirements-[os].yml"
 ...# after successful install
-C:\Users\UserName> conda activate uavbroccoli
-(uavbroccoli) C:\Users\UserName> 
+conda activate uavbroccoli
 ```
 
-If you using Admin also meet the premission problem, please update Conda to the latest version:
+If you meet the premission problem even in the admin/sudo, please update local Conda to the latest version:
 
 ```bash
-C:\Users\UserName> conda update -n base -c defaults conda
-```
-
-Or you can using `pip` as alternative:
-
-```bash
-(your_virtual_env) C:\Users\UserName> pip install -r requirements.txt
+conda update -n base -c defaults conda
 ```
 
 ## Step 1: Collect UAV data
