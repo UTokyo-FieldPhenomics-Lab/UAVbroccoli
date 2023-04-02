@@ -25,6 +25,8 @@ dependencies:
   - xz=5.2.6
   - zlib=1.2.13
   - pip:
+    - --index-url https://download.pytorch.org/whl
+    - --extra-index-url https://pypi.python.org/simple
     - absl-py==1.0.0
     - anyio==3.5.0
     - argon2-cffi==21.3.0
@@ -155,8 +157,6 @@ dependencies:
     - werkzeug==2.0.2
     - widgetsnbextension==3.5.2
     - zipp==3.7.0
-  - pip:
-    - --index-url https://download.pytorch.org/whl
     - torch==1.9.0+cu111
     - torchaudio==0.9.0
     - torchvision==0.10.0+cu111
