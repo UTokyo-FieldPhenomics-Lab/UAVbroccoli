@@ -14,6 +14,7 @@ The folder structure of this project:
 3. `11_root_pos` and `yolov5` are the code for **root position detection**
 4. `12_head_seg` and `bisenet` are the code for **broccoli head segmentation** (**not finished yet**)
 5. `EasyIDP` is the code for field map backward projection, while `utils` is the code for image label conversion in previous deep learning steps.
+6. `Labelme` is the modified version from: https://github.com/UTokyo-FieldPhenomics-Lab/labelme-easypcc
 
 ## Step 0: Setup enviroments
 
