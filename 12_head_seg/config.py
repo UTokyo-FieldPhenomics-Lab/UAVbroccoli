@@ -4,6 +4,7 @@
 project_data_folder = "Z:/hwang_Pro/data/2022_tanashi_broccoli"
 working_spacename = "12_head_segment"
 
+
 ###################
 # 01 prepare data #
 ###################
@@ -50,13 +51,42 @@ process_date = {
     },
 }
 
+
+########################
+# 02 pick train images #
+########################
+supported_suffix = ['.jpg', '.png']
+
+########################
+# 03 train_model #
+########################
+
+annotation_path= f"{project_data_folder}/{working_spacename}/annotations/tbd"
+device= "cuda"
+number_epochs= 200
+batch_size = 64
+learning_rate= 0.0005
+beta_1= 0.5
+beta_2= 0.999
+image_size= 128
+classes= ["broccoli"]
+coco_path= "./bisenet/__pycache__/coco.json"
+
+# outputs
+ckpt_folder= "./bisenet/__pycache__/ckpt"
+temp_results= "./bisenet/temp_results"
+
+
+
 ##############################
 # init package and functions #
 ##############################
 
-import numpy as np
-import easyidp as idp
 import os
+from pathlib import Path
+import numpy as np
+import pandas as pd
+import easyidp as idp
 import matplotlib.pyplot as plt
 import pickle
 
