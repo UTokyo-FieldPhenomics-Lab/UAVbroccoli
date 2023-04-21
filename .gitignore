@@ -13,7 +13,7 @@ test/
 12_head_seg/bisenet/__pycache__
 12_head_seg/bisenet/temp_results
 12_head_seg/bisenet/ckpt
-12_head_seg/bisenet/*.jpg
+12_head_seg/bisenet/*.png
 12_head_seg/*.png
 
 
