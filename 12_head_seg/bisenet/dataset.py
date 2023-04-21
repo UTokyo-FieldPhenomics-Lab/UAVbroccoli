@@ -3,7 +3,7 @@ import os
 import torch
 import torch.nn as nn
 from torchvision import transforms
-
+# from pathlib import Path
 from skimage.transform import resize
 import numpy as np
 from PIL import Image
@@ -13,9 +13,8 @@ from tqdm import tqdm
 # from tqdm import tqdm
 
 class Broccoli(torch.utils.data.Dataset):
-    def __init__(self, root, coco, size=256, transforms=None):
+    def __init__(self, coco, size=256, transforms=None):
         super().__init__()
-        self.root = root
         self.coco = coco
         imgIds = coco.getImgIds()
         annIds = coco.getAnnIds()
@@ -57,9 +56,11 @@ class Broccoli(torch.utils.data.Dataset):
         for image in tqdm(self.images):
             # print(image['imagePath'])
             # print(image['imagePath'].split('_')[3][:4])
-
-            imagePath = self.root + image['imagePath'][1:]
+            # p = Path(image['imagePath'])
+            imagePath = image['imagePath']
             img = imageio.imread(imagePath)
+            if img.shape[-1] == 4:
+                img = img[..., :3]
             id = image['id']
             anns_ids = self.coco.getAnnIds(imgIds = [id])
             anns = self.coco.loadAnns(ids=anns_ids)

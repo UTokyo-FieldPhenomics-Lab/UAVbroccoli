@@ -1,9 +1,0 @@
-json_path = 'G:/Shared drives/broccoliProject/13_roi_on_raw/train/'
-out_dir = './checkpoints'
-n_epochs = 100
-n_classes = 1
-batch_size = 64
-lr = 0.001
-beta_1 = 0.5
-beta_2 = 0.9
-im_size = 128

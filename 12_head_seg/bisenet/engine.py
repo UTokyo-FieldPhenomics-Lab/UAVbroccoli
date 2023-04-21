@@ -1,5 +1,4 @@
 import os
-import sys
 import copy
 import time
 import json
@@ -7,7 +6,6 @@ import json
 import numpy as np
 
 from tqdm import tqdm
-from prefetch_generator import BackgroundGenerator
 
 import torch
 import torch.nn as nn
@@ -20,74 +18,53 @@ import albumentations as A
 from albumentations.pytorch import ToTensorV2
 import matplotlib.pyplot as plt
 
-from bisenetv2 import BiSeNetV2
-from dataset import Broccoli
 from pycocotools.coco import COCO
-sys.path.append("..") 
-from utils.labelme2coco import labelme2json
+from .bisenetv2 import BiSeNetV2
+from .dataset import Broccoli
 
-import args
-
-seed = 1123
-torch.manual_seed(seed)
+SEED = 1123
+torch.manual_seed(SEED)
 cudnn.benchmark = True
-
 
 class OhemCELoss(nn.Module):
 
-    def __init__(self, thresh, ignore_lb=255):
+    def __init__(self, thresh):
         super(OhemCELoss, self).__init__()
         self.thresh = -torch.log(torch.tensor(thresh, requires_grad=False, dtype=torch.float)).cuda()
-        self.ignore_lb = ignore_lb
-        self.criteria = nn.CrossEntropyLoss(ignore_index=ignore_lb, reduction='none')
+        self.criteria = nn.CrossEntropyLoss(reduction='none')
 
     def forward(self, logits, labels):
-        n_min = labels[labels != self.ignore_lb].numel() // 16
+        n_min = labels.numel() // 16
         loss = self.criteria(logits, labels).view(-1)
         loss_hard = loss[loss > self.thresh]
         if loss_hard.numel() < n_min:
             loss_hard, _ = loss.topk(n_min)
         return torch.mean(loss_hard)
 
-
-class DataLoaderX(DataLoader):
-    def __iter__(self):
-        return BackgroundGenerator(super().__iter__())
-
 class bisenet_engine:
-    def __init__(self, arg, device):
+    def __init__(self, args):
 
-        self.json_path = arg.json_path
-    
-        self.out_dir = arg.out_dir
-        os.makedirs(arg.out_dir, exist_ok=True)
+        self.args = args
+        self.annotation_path = args.annotation_path
+
+        self.out_dir = args.ckpt_folder
+        os.makedirs(args.ckpt_folder, exist_ok=True)
         
-        self.n_epochs = arg.n_epochs
-        self.n_classes = arg.n_classes
+        self.n_epochs = args.number_epochs
 
-        self.batch_size = arg.batch_size
-        self.lr = arg.lr
-        self.beta_1 = arg.beta_1 # 0.5
-        self.beta_2 = arg.beta_2 # 0.999
+        self.classes = args.classes
+        self.n_classes = len(args.classes)
 
-        self.im_size = arg.im_size
+        self.batch_size = args.batch_size
+        self.lr = args.learning_rate
+        self.beta_1 = args.beta_1 # 0.5
+        self.beta_2 = args.beta_2 # 0.999
 
-        self.classes = ["broccoli"]
+        self.im_size = args.image_size
+        self.device = args.device
 
-        self.device = device
-        self.read_coco()
+        self.coco = COCO(args.coco_path)
         self.init_model()
-    
-    def read_coco(self):
-        json_list = [entry.name for entry in os.scandir(self.json_path) if ((entry.name.endswith('.json')) & (entry.name.startswith('labeled_')))]
-        print('initializing training set...')
-        print(f'{len(json_list)} labeled json files found')
-        coco_label = labelme2json(self.json_path, json_list)
-        os.makedirs('./temp', exist_ok=True)
-        with open('./temp/temp.json', 'w+') as f:
-            f.write(json.dumps(coco_label))
-        
-        self.coco = COCO('./temp/temp.json')
         
     def init_model(self):
         print("initilizing network")
@@ -97,7 +74,7 @@ class bisenet_engine:
         # self.optim = torch.optim.Adam(self.model.parameters(), lr=self.lr, betas=(self.beta_1, self.beta_2))
         # self.optim = torch.optim.SGD(self.model.parameters(), lr=self.lr)
         self.optim = torch.optim.Adam(self.model.parameters(), lr=self.lr, betas=(0.5, 0.9))
-        
+        self.lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(self.optim, milestones=[80,120,140,160, 180], gamma=0.5)
 
         # self.criterian = torch.nn.MSELoss(reduction='mean')
         self.criterian = nn.CrossEntropyLoss(reduction='mean')
@@ -116,15 +93,15 @@ class bisenet_engine:
             ]
         )
         
-        self.train_ = Broccoli(coco=self.coco, size=self.im_size, transforms=transform, save_data=True)
+        self.train_ = Broccoli(coco=self.coco, size=self.im_size, transforms=transform)
         # self.valid_ = Broccoli(img_dir=self.img_dir, mask_dir=self.mask_dir, size=self.im_size, data_type="validation")
 
-        self.dataloader_train = DataLoaderX(
+        self.dataloader_train = DataLoader(
             self.train_,
             batch_size=self.batch_size,
             # num_workers=4,
             shuffle=True,
-            # drop_last=True
+            drop_last=False
         )
         
         print("initilization done")
@@ -163,14 +140,6 @@ class bisenet_engine:
             self.model.load_state_dict(model_weight)
             base = checkpoint["epoch"]
         else:
-            def weights_init(m):
-                if isinstance(m, nn.Conv2d) or isinstance(m, nn.ConvTranspose2d):
-                    torch.nn.init.normal_(m.weight, 0.0, 0.02)
-                if isinstance(m, nn.BatchNorm2d):
-                    torch.nn.init.normal_(m.weight, 0.0, 0.02)
-                    torch.nn.init.constant_(m.bias, 0)
-            self.model = self.model.apply(weights_init)
-
             base = 0
 
 
@@ -191,9 +160,9 @@ class bisenet_engine:
             mious = 0.
 
             len_train = len(self.dataloader_train)
-            # print(len_train)
+            print(len_train)
             for img, mask in tqdm(self.dataloader_train):
-                # print(np.unique(mask))
+                print(np.unique(mask))
                 ## Train ##
                 self.optim.zero_grad()
                 img = img.to(self.device)
@@ -235,6 +204,8 @@ class bisenet_engine:
             train_losses += [batch_loss / len_train]
             train_mious += [mious / len_train]
 
+            self.lr_scheduler.step()
+
             ### Visualization code ###
             fig = plt.figure(figsize=(30,10))
 
@@ -265,9 +236,9 @@ class bisenet_engine:
             ax3.imshow(image_grid.permute(1, 2, 0).squeeze())
             
 
-            if not os.path.exists(f'./seg_results'):
-                os.makedirs(f'./seg_results')
-            plt.savefig(f'./seg_results/epoch_{epoch+1}.jpg')
+            if not os.path.exists(self.args.temp_results):
+                os.makedirs(self.args.temp_results)
+            plt.savefig(f'{self.args.temp_results}/epoch_{epoch+1}.jpg')
             # plt.show()
             plt.close()
             
@@ -318,5 +289,6 @@ if __name__ == "__main__":
     # device = "cpu"
     
     engine = bisenet_engine(args, device)
-
-    engine.train(ckpt='./checkpoints/best_model.tar')
+    engine.train()
+    # engine.train(ckpt='./checkpoints/v4/epoch200.tar')
+    # engine.train(ckpt='./ckpt/v4/epoch500.tar')
