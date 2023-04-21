@@ -10,10 +10,12 @@
 */__pycache__/*
 
 test/
-bisenet/checkpoints
-bisenet/seg_results
-bisenet/temp
-bisenet/test
+12_head_seg/bisenet/__pycache__
+12_head_seg/bisenet/temp_results
+12_head_seg/bisenet/ckpt
+12_head_seg/bisenet/*.jpg
+12_head_seg/*.png
+
 
 broccoli_data/
 broccoli_data_2021/
