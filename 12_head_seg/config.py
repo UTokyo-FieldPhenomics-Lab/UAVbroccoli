@@ -58,7 +58,7 @@ process_date = {
 supported_suffix = ['.jpg', '.png']
 
 ########################
-# 03 train_model #
+# 03 train_model       #
 ########################
 
 annotation_path= f"{project_data_folder}/{working_spacename}/annotations/tbd"
@@ -76,7 +76,11 @@ coco_path= "./bisenet/__pycache__/coco.json"
 ckpt_folder= "./bisenet/__pycache__/ckpt"
 temp_results= "./bisenet/temp_results"
 
+########################
+# 04 apply to all      #
+########################
 
+model_weight="./bisenet/__pycache__/ckpt/epoch200.tar"
 
 ##############################
 # init package and functions #
