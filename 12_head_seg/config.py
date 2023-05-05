@@ -57,11 +57,14 @@ process_date = {
 ########################
 supported_suffix = ['.jpg', '.png']
 
+annotation_path= f"{project_data_folder}/{working_spacename}/annotations/tbd"
+labeled_image_database = f"{project_data_folder}/{working_spacename}/annotations/json_index.csv"
+
+select_number_per_date = 2
+
 ########################
 # 03 train_model       #
 ########################
-
-annotation_path= f"{project_data_folder}/{working_spacename}/annotations/tbd"
 device= "cuda"
 number_epochs= 200
 batch_size = 64
@@ -70,17 +73,17 @@ beta_1= 0.5
 beta_2= 0.999
 image_size= 128
 classes= ["broccoli"]
-coco_path= "./bisenet/__pycache__/coco.json"
+coco_path= r"./bisenet/__pycache__/coco.json"
 
 # outputs
-ckpt_folder= "./bisenet/__pycache__/ckpt"
-temp_results= "./bisenet/temp_results"
+ckpt_folder= r"./bisenet/__pycache__/bisenet/ckpt"
+temp_results= r"./bisenet/__pycache__/bisenet/temp_results"
 
 ########################
 # 04 apply to all      #
 ########################
 
-model_weight="./bisenet/__pycache__/ckpt/epoch200.tar"
+model_weight="./__pycache__/bisenet/ckpt/epoch200.tar"
 
 ##############################
 # init package and functions #
