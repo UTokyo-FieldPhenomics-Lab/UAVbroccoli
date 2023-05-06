@@ -57,7 +57,8 @@ process_date = {
 ########################
 supported_suffix = ['.jpg', '.png']
 
-annotation_path= f"{project_data_folder}/{working_spacename}/annotations/tbd"
+annotation_path = f"{project_data_folder}/{working_spacename}/annotations/tbd"
+annotation_train_path = f"{project_data_folder}/{working_spacename}/annotations/train"
 labeled_image_database = f"{project_data_folder}/{working_spacename}/annotations/json_index.csv"
 
 select_number_per_date = 2

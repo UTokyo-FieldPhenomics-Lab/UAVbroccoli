@@ -32,15 +32,15 @@ def write_json_old(img_path, prefix):
     with open(os.path.join(JSON_PATH, json_name), 'w+') as f:
         f.write(json.dumps(labelme, indent=1))
 
-def save_lbme_json(img_path, polygons, json_save_path):
+def save_lbme_json(img_path, polygons, json_save_path, img_w=None, img_h=None):
     labelme = {
         'version': "5.0.1",
         'flags': {},
         'shapes': [],
         'imagePath': None,
         'imageData': None,
-        'imageHeight': None,
-        'imageWidth': None
+        'imageHeight': img_h,
+        'imageWidth': img_w
     }
     labelme['imagePath'] = img_path
 
