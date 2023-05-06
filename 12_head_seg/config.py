@@ -76,14 +76,14 @@ classes= ["broccoli"]
 coco_path= r"./bisenet/__pycache__/coco.json"
 
 # outputs
-ckpt_folder= r"./bisenet/__pycache__/bisenet/ckpt"
-temp_results= r"./bisenet/__pycache__/bisenet/temp_results"
+ckpt_folder= r"./bisenet/__pycache__/ckpt"
+temp_results= r"./bisenet/__pycache__/temp_results"
 
 ########################
 # 04 apply to all      #
 ########################
 
-model_weight="./__pycache__/bisenet/ckpt/epoch200.tar"
+model_weight=r"./bisenet/__pycache__/ckpt/epoch200.tar"
 
 ##############################
 # init package and functions #

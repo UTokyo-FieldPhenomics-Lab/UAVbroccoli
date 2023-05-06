@@ -8,10 +8,10 @@ ImageFile.LOAD_TRUNCATED_IMAGES = True
 ROOT = 'G:/Shared drives/broccoliProject/'
 PROJECT_PATH = ROOT + '/11_labelme_json/root_on_raw.json/'
 JSON_PATH = ROOT + '/11_labelme_json/json'
-os.makedirs(JSON_PATH, exist_ok=True)
+# os.makedirs(JSON_PATH, exist_ok=True)
 
 
-def write_json(img_path, prefix):
+def write_json_old(img_path, prefix):
     
     labelme = {
         'version': "4.5.7",
@@ -31,7 +31,32 @@ def write_json(img_path, prefix):
     # print(json_name)
     with open(os.path.join(JSON_PATH, json_name), 'w+') as f:
         f.write(json.dumps(labelme, indent=1))
-    
+
+def save_lbme_json(img_path, polygons, json_save_path):
+    labelme = {
+        'version': "5.0.1",
+        'flags': {},
+        'shapes': [],
+        'imagePath': None,
+        'imageData': None,
+        'imageHeight': None,
+        'imageWidth': None
+    }
+    labelme['imagePath'] = img_path
+
+    for polygon in polygons:  
+        coords = {
+            "label": "broccoli",
+            "points": polygon[:-1],
+            "group_id": None,
+            "shape_type": "polygon",
+            "flags": {}
+        }
+        labelme['shapes'].append(coords)
+
+    with open(json_save_path, 'w+') as f:
+        f.write(json.dumps(labelme, indent=1))
+
 if __name__ == "__main__":
     # jsonsFile= [entry for entry in os.scandir(PROJECT_PATH) if entry.name.endswith('.json')]
     # # print(imagesPath[0])
