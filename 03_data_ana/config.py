@@ -6,6 +6,8 @@ user = platform.node()
 
 if user == "DESKTOP-3J8SGRC":
     easyidp_path = "Y:\hwang_Pro\github\EasyIDP"
+elif user == "RTX3090AMD":
+    easyidp_path = r"Z:/hwang_Pro/jupyter/06_broccoli.paper/11_root_pos/"
 elif user == "NERV":
     easyidp_path = "/mnt/d/OneDrive/Program/GitHub/EasyIDP"
 else:
