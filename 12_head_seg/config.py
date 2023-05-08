@@ -64,7 +64,7 @@ labeled_image_database = f"{project_data_folder}/{working_spacename}/annotations
 select_number_per_date = 2
 
 ########################
-# 03 train_model       #
+# 04 train_model       #
 ########################
 device= "cuda"
 number_epochs= 200
@@ -73,18 +73,19 @@ learning_rate= 0.0005
 beta_1= 0.5
 beta_2= 0.999
 image_size= 128
-classes= ["broccoli"]
+classes= ["broccoli", "_background_"]
 coco_path= r"./bisenet/__pycache__/coco.json"
 
 # outputs
 ckpt_folder= r"./bisenet/__pycache__/ckpt"
 temp_results= r"./bisenet/__pycache__/temp_results"
-
-########################
-# 04 apply to all      #
-########################
-
 model_weight=r"./bisenet/__pycache__/ckpt/epoch200.tar"
+
+########################
+# 05 apply to all      #
+########################
+
+result_folder = f"{project_data_folder}/{working_spacename}/results"
 
 ##############################
 # init package and functions #
