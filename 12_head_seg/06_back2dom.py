@@ -1,5 +1,6 @@
 from config import *
 
+import random
 import shapely
 from skimage.transform import PiecewiseAffineTransform
 from scipy.spatial import ConvexHull, KDTree
@@ -162,6 +163,9 @@ for date, val in tbar:
     ms = ms_dict[current_date]
     head_np2d_pix_on_dom = ms.dom.geo2pixel(head_np2d)
 
+    roi_geo_xyz = roi.copy()
+    roi_geo_xyz.get_z_from_dsm(ms.dsm, mode='face')
+
     qbar = tqdm(val.items(), leave=False)
     for img_name, head_json in qbar:
         ins = img_name.split('_')  # '1_DJI_0356' -> [1, DJI, 0356]
@@ -175,19 +179,19 @@ for date, val in tbar:
         ctrl_pts_geo_xyz.crs = roi.crs
         ctrl_pts_geo_xyz[roi_id] = create_control_points(roi[roi_id])
 
-        roi_geo_xyz = idp.ROI()
-        roi_geo_xyz.crs = roi.crs
-        roi_geo_xyz[roi_id] = roi[roi_id]
+        # roi_geo_xyz = idp.ROI()
+        # roi_geo_xyz.crs = roi.crs
+        # roi_geo_xyz[roi_id] = roi[roi_id]
 
         ctrl_pts_geo_xyz.get_z_from_dsm(ms.dsm, mode='point')
-        roi_geo_xyz.get_z_from_dsm(ms.dsm, mode='face')
+        # roi_geo_xyz.get_z_from_dsm(ms.dsm, mode='face')
 
         # get the pixel coordinates on raw image & dom
         ctrl_pts_pix_on_img = back2raw_one2one(ms, ctrl_pts_geo_xyz[0], on_img)
         ctrl_pts_pix_on_dom = ms.dom.geo2pixel(ctrl_pts_geo_xyz[0])
 
-        roi_pix_on_img = back2raw_one2one(ms, roi_geo_xyz[0], on_img)
-        roi_pix_on_dom = ms.dom.geo2pixel(roi_geo_xyz[0])
+        roi_pix_on_img = back2raw_one2one(ms, roi_geo_xyz[roi_id], on_img)
+        roi_pix_on_dom = ms.dom.geo2pixel(roi_geo_xyz[roi_id])
 
         # calculate the piecewise affine transformation
         pie_aff_tform = PiecewiseAffineTransform()
@@ -243,10 +247,12 @@ for date, val in tbar:
                     (head_np2d_pix_on_dom[:,1] <= (dom_ymax+buffer))
         broccoli_in = broccoli_idx[rough_idx]
         broccoli_in_pos = head_np2d_pix_on_dom[rough_idx] - dom_offset
-        ax.scatter(*broccoli_in_pos.T, facecolors='b', edgecolors='w', linewidths=2, s=70)
+        ax.scatter(*broccoli_in_pos.T, facecolors='b', edgecolors='w', linewidths=2, s=30, alpha=0.5)
 
         for bid, binpos in zip(broccoli_in, broccoli_in_pos):
             ax.annotate(bid, xy=binpos)
+
+        save_img = False
         #-------------------------------------------
         # continue in the next forloops
 
@@ -280,11 +286,10 @@ for date, val in tbar:
             ax.add_patch(
                 plt.Circle((xc_plot, yc_plot), r_plot, color='b', fill=False)
             )
-            ax.scatter(xc_plot, yc_plot, c=color)
 
             # draw the line between broccoli id -> circular center
             head_pix_xy = head_np2d_pix_on_dom[id_list_idx] - dom_offset
-            ax.plot([xc_plot, head_pix_xy[0]], [yc_plot, head_pix_xy[1]], c=color)   # 
+            ax.plot([xc_plot, head_pix_xy[0]], [yc_plot, head_pix_xy[1]], c=color, alpha=0.5)
             #-------------------------------------------\
 
             props = get_2D_traits(head_geo_np, date, this_broccoli_id, xc, yc, r)
@@ -292,13 +297,16 @@ for date, val in tbar:
             
         plt.axis('off')
         plt.tight_layout()
-        plt.savefig(f"{project_data_folder}/{working_spacename}/results/back2dom_match/{date}_{img_name}.png")
+        if random.randint(0, 10) == 5 or save_img:
+            plt.savefig(f"{project_data_folder}/{working_spacename}/results/back2dom_match/{save_img}_{date}_{img_name}.png")
         plt.clf()
         plt.cla()
         plt.close()
 
-        props_all.to_excel(f"{project_data_folder}/{working_spacename}/results/props_all_2022.xlsx", index=False)
-        break
+    props_all.to_excel(f"{project_data_folder}/{working_spacename}/results/props_all_2022.xlsx", index=False)
 
-    break
 print(stdout)
+
+# todo:
+# add distance into traits?
+# fix circlar errors
