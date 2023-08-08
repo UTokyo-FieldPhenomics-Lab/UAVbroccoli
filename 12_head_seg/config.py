@@ -23,31 +23,36 @@ process_date = {
         "project": f"{project_data_folder}/01_metashape_projects/broccoli_autumn21.psx", 
         "chunk_id": "20220321_0",
         "dom": f"{project_outputs_folder}/broccoli_tanashi_5_20220321_0/broccoli_tanashi_5_20220321_0_dom.tif",
-        "dsm": f"{project_outputs_folder}/broccoli_tanashi_5_20220321_0/broccoli_tanashi_5_20220321_0_dsm.tif"
+        "dsm": f"{project_outputs_folder}/broccoli_tanashi_5_20220321_0/broccoli_tanashi_5_20220321_0_dsm.tif",
+        "pcd": f"{project_outputs_folder}/broccoli_tanashi_5_20220321_0/broccoli_tanashi_5_20220321_0.laz",
         },
     "220325": {
         "project": f"{project_data_folder}/01_metashape_projects/broccoli_autumn21.psx",
         "chunk_id": "20220325_0",
         "dom": f"{project_outputs_folder}/broccoli_tanashi_5_20220325_0/broccoli_tanashi_5_20220325_0_dom.tif",
-        "dsm": f"{project_outputs_folder}/broccoli_tanashi_5_20220325_0/broccoli_tanashi_5_20220325_0_dsm.tif"
+        "dsm": f"{project_outputs_folder}/broccoli_tanashi_5_20220325_0/broccoli_tanashi_5_20220325_0_dsm.tif",
+        "pcd": f"{project_outputs_folder}/broccoli_tanashi_5_20220325_0/broccoli_tanashi_5_20220325_0.laz",
         },
     "220329": {
         "project": f"{project_data_folder}/01_metashape_projects/broccoli_autumn21.psx",
         "chunk_id": "20220329_0",
         "dom": f"{project_outputs_folder}/broccoli_tanashi_5_20220329_0/broccoli_tanashi_5_20220329_0_dom.tif",
-        "dsm": f"{project_outputs_folder}/broccoli_tanashi_5_20220329_0/broccoli_tanashi_5_20220329_0_dsm.tif"
+        "dsm": f"{project_outputs_folder}/broccoli_tanashi_5_20220329_0/broccoli_tanashi_5_20220329_0_dsm.tif",
+        "pcd": f"{project_outputs_folder}/broccoli_tanashi_5_20220329_0/broccoli_tanashi_5_20220329_0.laz",
         },
     "220331": {
         "project": f"{project_data_folder}/01_metashape_projects/broccoli_autumn21.psx",
         "chunk_id": "20220331_0",
         "dom": f"{project_outputs_folder}/broccoli_tanashi_5_20220331_0/broccoli_tanashi_5_20220331_0_dom.tif",
-        "dsm": f"{project_outputs_folder}/broccoli_tanashi_5_20220331_0/broccoli_tanashi_5_20220331_0_dsm.tif"
+        "dsm": f"{project_outputs_folder}/broccoli_tanashi_5_20220331_0/broccoli_tanashi_5_20220331_0_dsm.tif",
+        "pcd": f"{project_outputs_folder}/broccoli_tanashi_5_20220331_0/broccoli_tanashi_5_20220331_0.laz",
         },
     "220405": {
         "project": f"{project_data_folder}/01_metashape_projects/broccoli_autumn21.psx",
         "chunk_id": "20220405_0",
         "dom": f"{project_outputs_folder}/broccoli_tanashi_5_20220405_0/broccoli_tanashi_5_20220405_0_dom.tif",
-        "dsm": f"{project_outputs_folder}/broccoli_tanashi_5_20220405_0/broccoli_tanashi_5_20220405_0_dsm.tif"
+        "dsm": f"{project_outputs_folder}/broccoli_tanashi_5_20220405_0/broccoli_tanashi_5_20220405_0_dsm.tif",
+        "pcd": f"{project_outputs_folder}/broccoli_tanashi_5_20220405_0/broccoli_tanashi_5_20220405_0.laz",
     },
 }
 

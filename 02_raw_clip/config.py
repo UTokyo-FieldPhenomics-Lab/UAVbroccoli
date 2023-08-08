@@ -10,10 +10,12 @@ if user == "DESKTOP-3J8SGRC":
 elif user == "RTX3090AMD":
     easyidp_path = r"E:\hwang_jupyter\06_broccoli.paper\EasyIDP"
     disk_root = r"Z:\hwang_Pro\data"
+    easyric_path = r'Z:\hwang_Pro\jupyter\06_broccoli.paper\11_root_pos'
 else:
     raise FileNotFoundError(f"please add new user [{user}] setting in configs.py")
     
 sys.path.insert(0, easyidp_path)
+sys.path.insert(0, easyric_path)
 
 
 ###################
