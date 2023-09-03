@@ -76,8 +76,8 @@ Please refer to [this document](10_agisoft_batch_tools/readme.md) in `10_agisoft
 
 ## Step 3: Position detection
 
-Please refer to [this document](11_root_pos/readme.md) (not finished) in `11_root_pos`
+Please refer to [this document](11_root_pos/readme.md) in `11_root_pos`
 
 ## Step 4: Head segmentaion
 
-Please refer to [this document](12_head_seg/readme.md) (not finished) in `12_head_seg`
+Please refer to [this document](12_head_seg/readme.md) in `12_head_seg`
