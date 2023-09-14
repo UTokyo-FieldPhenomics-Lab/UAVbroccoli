@@ -20,7 +20,8 @@ if os.path.exists(config.bbox_pkl_path):
         S0 = Metashape.Vector([s[0], s[1], s[2]])
 
 else:
-    chunk = doc.chunks[0]
+    # select current activated chunk
+    chunk = doc.chunk
 
     T0 = chunk.transform.matrix
     region = chunk.region
