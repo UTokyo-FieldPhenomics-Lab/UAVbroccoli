@@ -14,11 +14,10 @@ The folder structure of this project:
 3. `11_root_pos` is the code for **root position detection**   
 4. `12_head_seg` is the code for **broccoli head segmentation**
 5. `13_price_predict` is the R script for price prediction.
-5. `Labelme` is the modified version from: 
 
 ## Dependices
 
-We embedded the following project code directly into our project to ensure the reproductivity. The MIT license **only applies to the code of the broccoli processing part**, rather than these dependices, please kindly follow their original license.
+We embedded the following project code directly into our project to ensure the reproductivity. The MIT license of this project **only applies to the code of the broccoli processing part**, rather than these dependices, please kindly follow their original license.
 
 * **Labelme** (forked and modified from https://github.com/wkentaro/labelme, AGPL-3.0 License, see `labelme/LICENSE` file, you can also access it at: https://github.com/UTokyo-FieldPhenomics-Lab/labelme-easypcc)
 * **Yolo V5** (forked from https://github.com/ultralytics/yolov5, AGPL-3.0 license, see `11_root_positions/yolov5/LICENSE` file)
