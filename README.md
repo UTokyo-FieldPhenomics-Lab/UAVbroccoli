@@ -25,6 +25,11 @@ We embedded the following project code directly into our project to ensure the r
 * **EasyRIC** (the v1.0 verion of our EasyIDP package, MIT license, see https://github.com/UTokyo-FieldPhenomics-Lab/EasyIDP/tree/v1.0 for the archived version)
 * **EasyIDP** (the v2.0 version of our EasyIDP package, MIT liences, see https://github.com/UTokyo-FieldPhenomics-Lab/EasyIDP for the latest version)
 
+## Demo dataset
+
+We provide 3 years' demo UAV data (one transplanting and one mid-blooming day) for executing the scripts of this project, if you want testing this project without your own data, please filling [this form](https://forms.gle/pLRRf7Ye9nhVX31f7). 
+
+**It is recommended just downloading `2022_tanashi_broccoli` folder for testing**
 
 ## Usage
 
